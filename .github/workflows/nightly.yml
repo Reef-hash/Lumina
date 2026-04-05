@@ -12,6 +12,10 @@ concurrency:
   group: nightly
   cancel-in-progress: true
 
+permissions:
+  contents: write
+  releases: write
+
 jobs:
   check_recent_commit:
     runs-on: ubuntu-latest
