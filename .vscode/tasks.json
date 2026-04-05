@@ -1,0 +1,57 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build Lumina (RelWithDebInfo)",
+            "type": "shell",
+            "command": "${workspaceFolder}\\build.ps1",
+            "args": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true
+            },
+            "problemMatcher": [
+                "$msCompile"
+            ]
+        },
+        {
+            "label": "Build and Inject DLL",
+            "type": "shell",
+            "command": "${workspaceFolder}\\build-and-inject.ps1",
+            "args": [],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": [
+                "$msCompile"
+            ],
+            "dependsOn": ["Build Lumina (RelWithDebInfo)"]
+        },
+        {
+            "label": "Clean Build",
+            "type": "shell",
+            "command": "powershell",
+            "args": [
+                "-Command",
+                "Remove-Item '${workspaceFolder}\\build' -Recurse -Force -ErrorAction SilentlyContinue; mkdir '${workspaceFolder}\\build'; Write-Host 'Build folder cleaned'"
+            ],
+            "presentation": {
+                "reveal": "always"
+            }
+        }
+    ]
+}
