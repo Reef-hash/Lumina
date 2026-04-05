@@ -77,30 +77,65 @@ namespace YimMenu
 
 		auto depletionProgress = 1.0f - (timeElapsed / (float)notification.m_Duration);
 
-		ImGui::ProgressBar(depletionProgress, ImVec2(-1, 3.5f), "");
-
-		// TODO: Add icon for type instead of colored text
+		// Determine color based on notification type
+		ImVec4 borderColor;
+		ImVec4 accentColor;
+		const char* icon = "ℹ️";
+		
 		if (notification.m_Type == NotificationType::Info)
 		{
-			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
-			ImGui::Text("%s", notification.m_Title.c_str());
+			borderColor = ImVec4(0.2f, 0.6f, 1.0f, 0.8f);      // Cyan-blue
+			accentColor = ImVec4(0.3f, 0.7f, 1.0f, 1.0f);     // Bright cyan
+			icon = "ℹ️";
 		}
 		else if (notification.m_Type == NotificationType::Success)
 		{
-			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 1.0f, 0.0f, 1.0f));
-			ImGui::Text("%s", notification.m_Title.c_str());
+			borderColor = ImVec4(0.0f, 0.8f, 0.2f, 0.8f);      // Green
+			accentColor = ImVec4(0.2f, 1.0f, 0.4f, 1.0f);     // Bright green
+			icon = "✓";
 		}
 		else if (notification.m_Type == NotificationType::Warning)
 		{
-			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.5f, 0.0f, 1.0f));
-			ImGui::Text("%s", notification.m_Title.c_str());
+			borderColor = ImVec4(1.0f, 0.7f, 0.0f, 0.8f);      // Orange
+			accentColor = ImVec4(1.0f, 0.85f, 0.2f, 1.0f);     // Bright orange
+			icon = "⚠️";
 		}
 		else if (notification.m_Type == NotificationType::Error)
 		{
-			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.0f, 0.0f, 1.0f));
-			ImGui::Text("%s", notification.m_Title.c_str());
+			borderColor = ImVec4(1.0f, 0.2f, 0.2f, 0.8f);      // Red
+			accentColor = ImVec4(1.0f, 0.4f, 0.4f, 1.0f);     // Bright red
+			icon = "✕";
 		}
 
+		// Draw glowing border effect
+		ImDrawList* drawList = ImGui::GetWindowDrawList();
+		ImVec2 windowPos = ImGui::GetWindowPos();
+		ImVec2 windowEnd = ImVec2(windowPos.x + cardSize.x, windowPos.y + cardSize.y);
+		
+		// Glow effect (multiple layers with decreasing alpha)
+		for (int i = 3; i >= 1; --i)
+		{
+			ImVec4 glowColor = borderColor;
+			glowColor.w = 0.3f / i;
+			drawList->AddRect(
+				ImVec2(windowPos.x - i, windowPos.y - i),
+				ImVec2(windowEnd.x + i, windowEnd.y + i),
+				ImGui::GetColorU32(glowColor),
+				8.0f
+			);
+		}
+		
+		// Main border
+		drawList->AddRect(windowPos, windowEnd, ImGui::GetColorU32(borderColor), 8.0f, 0, 2.0f);
+
+		// Progress bar with neon purple color
+		ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(0.616f, 0.306f, 0.867f, 1.0f));
+		ImGui::ProgressBar(depletionProgress, ImVec2(-1, 4.0f), "");
+		ImGui::PopStyleColor();
+
+		// Title with icon
+		ImGui::PushStyleColor(ImGuiCol_Text, accentColor);
+		ImGui::TextColored(accentColor, "%s %s", icon, notification.m_Title.c_str());
 		ImGui::PopStyleColor();
 
 		ImGui::Separator();
