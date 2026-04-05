@@ -1,0 +1,22 @@
+build/
+.cache
+.vs
+out/
+
+# ============================================================================
+# Personal Learning Documentation - DO NOT UPLOAD TO GITHUB
+# Dokumentasi Pembelajaran Peribadi - JANGAN UPLOAD KE GITHUB
+# ============================================================================
+# Numbering sequence for organized learning path
+# Urutan penomboran untuk pembelajaran yang terstruktur
+
+01_Index.md
+02_ProjectStructure.md
+03_CommandsGuide.md
+04_MemoryAndHooking.md
+05_LearningRoadmap.md
+06_QuickReference.md
+07_ArchitectureDiagrams.md
+08_LearningPath_Courses.md
+08_FileOrganizationGuide.md
+    
