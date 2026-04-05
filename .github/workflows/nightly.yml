@@ -55,15 +55,15 @@ jobs:
         run: cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=RelWithDebInfo -S . -B build -G Ninja
 
       - name: Build 64bit RelWithDebInfo DLL
-        run: cmake --build ./build --config RelWithDebInfo --target ChronixV2 --
+        run: cmake --build ./build --config RelWithDebInfo --target Lumina --
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: binary
           path: |
-            build/ChronixV2.dll
-            build/ChronixV2.pdb
+            build/Lumina.dll
+            build/Lumina.pdb
 
       - name: Generate Build Info
         id: var
@@ -114,7 +114,7 @@ jobs:
       - name: Echo build sha256
         id: build_sha
         run: |
-          sha256sum ChronixV2.dll > sha256.checksum
+          sha256sum Lumina.dll > sha256.checksum
           echo "build_sha=$(cat sha256.checksum)" >> $GITHUB_OUTPUT
           cat sha256.checksum
 
@@ -138,8 +138,8 @@ jobs:
             You can download the build artifacts, generate a SHA256 checksum and compare it with the below binary.
             Build artifacts ARE NOT automatically the same as release assets since release assets can be modified afterwards.
 
-            These are nightly builds of YimMenuV2, they are provided for testing purposes only:
-            - Test if your build environment produces a broken YimMenuV2.dll
+            These are nightly builds of Lumina, they are provided for testing purposes only:
+            - Test if your build environment produces a broken Lumina.dll
             - Test if source code is out of date and no longer compatible with the current version of Grand Theft Auto V: Enhanced
 
             If you wish to use this menu as-is you are on your own, no warranty is provided.
@@ -149,4 +149,4 @@ jobs:
             ${{ needs.build_nightly.outputs.full_sha }}
             ```
           files: |
-            ChronixV2.dll
+            Lumina.dll

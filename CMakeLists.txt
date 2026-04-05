@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.20.x)
 
 include(cmake/cross-compile.cmake)
 
-project(ChronixV2 VERSION 0.0.1 DESCRIPTION "A new base using new C++ features optimised for speed and ease of use")
+project(Lumina VERSION 0.0.1 DESCRIPTION "Lumina - GTA V Mod Menu with neon purple & yellow UI")
 
 # libs
 include(cmake/async-logger.cmake)

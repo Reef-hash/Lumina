@@ -1,6 +1,6 @@
 # Chronix V2
 
-**ChronixV2** is an experimental mod menu for **Grand Theft Auto V: Enhanced Edition**.
+**Lumina** is an experimental mod menu for **Grand Theft Auto V: Enhanced Edition**.
 
 > ⚡ Cutting-edge features | 🎮 Enhanced Gameplay | 🛡️ Optional account protection
 
@@ -13,8 +13,8 @@
    - Place `version.dll` into your GTA V installation directory.
    - *Note*: Using FSL is optional, but highly recommended for enhanced account safety.
 
-2. **Download ChronixV2**
-   - Get the latest release from the [GitHub Releases](https://github.com/Deadlineem/ChronixV2/releases/download/nightly/ChronixV2.dll).
+2. **Download Lumina**
+   - Get the latest release from the [GitHub Releases](https://github.com/Reef-hash/Lumina/releases/download/nightly/Lumina.dll).
 
 3. **Obtain an Injector**
    - Download an injector such as [FateInjector](https://github.com/fligger/FateInjector/releases/download/1.0/FateInjector.exe).
@@ -26,14 +26,14 @@
 
 5. **Launch and Inject**
    - Start GTA V and wait for the main menu to load.
-   - Use your injector to inject `ChronixV2.dll` into the game process.
+   - Use your injector to inject `Lumina.dll` into the game process.
 
 ---
 
 ## Common Issues & Solutions
 
 ### ➤ Frequent Desyncs from Public Sessions
-- ChronixV2 does **not** currently include a BattlEye bypass to play with other players.
+- Lumina does **not** currently include a BattlEye bypass to play with other players.
 - Without a bypass, legitimate hosts will eventually remove you due to a heartbeat failure.
 - **Solution**: There is no current fix without using a private bypass.
 
@@ -50,10 +50,10 @@
 
 ## Disclaimer
 
-ChronixV2 is provided **as-is** for **experimental and educational purposes**.  
+Lumina is provided **as-is** for **experimental and educational purposes**.  
 We are not responsible for any bans, account issues, or game instability. Use at your own risk.
 
-ChronixV2 is based off of [YimMenuV2](https://github.com/YimMenu/YimMenuV2) with our own added features and changes.
+Lumina is a custom fork built from the [YimMenuV2](https://github.com/YimMenu/YimMenuV2) base with enhanced features and neon purple/yellow UI styling.
 
 
 ## License & User Rights
