@@ -1,4 +1,4 @@
-# Chronix V2
+# Lumina
 
 **Lumina** is an experimental mod menu for **Grand Theft Auto V: Enhanced Edition**.
 

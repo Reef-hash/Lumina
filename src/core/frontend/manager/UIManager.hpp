@@ -5,13 +5,10 @@
 
 namespace YimMenu
 {
-	// Enum to represent different UI themes, append when adding new themes
+	// Enum to represent different UI themes - Lumina uses only Modern theme
 	enum class UITheme
 	{
-		Classic = 0,
-		Modern,
-		ModernV,
-		Modular,
+		Modern = 0,
 	};
 
 	class UIManager

@@ -16,7 +16,7 @@ namespace YimMenu
 		char* path = nullptr;
 		size_t len = 0;
 		_dupenv_s(&path, &len, "APPDATA");
-		std::string full = std::string(path ? path : "") + "\\YimMenuV2\\themes.json";
+		std::string full = std::string(path ? path : "") + "\\Lumina\\themes.json";
 		free(path);
 		return full;
 	}();

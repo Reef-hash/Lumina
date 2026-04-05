@@ -1,24 +1,24 @@
 #include "UIManager.hpp"
 #include "game/pointers/Pointers.hpp"
 #include "game/frontend/Menu.hpp"
-#include "core/commands/ListCommand.hpp"
+#include "core/commands/FloatCommand.hpp"
+#include "core/commands/BoolCommand.hpp"
 
 namespace YimMenu::Features
 {
-	static const std::vector<std::pair<int, const char*>> g_StyleOptions = {
-		{0, "Classic"},
-		{1, "Modern"},
-		{2, "Modern (Vertical)"},
-	    {3, "Modern (Modular)"},
-	};
-
-	// Expose as global reference so other code can use it
-	static ListCommand _StyleSelector{
-		"styleselector",
-		"UI Style",
-		"Choose the UI style",
-		g_StyleOptions,
-		0};
+	// Transparency control for GUI
+	static FloatCommand _GUITransparency{
+		"guitransparency",
+		"GUI Transparency",
+		"Adjust GUI window transparency (0.0-1.0)",
+		1.0f};
+	
+	// Neon glow effect toggle
+	static BoolCommand _NeronGlowEffect{
+		"neonglow",
+		"Neon Glow Effect",
+		"Enable rotating neon glow border effect",
+		true};
 }
 
 namespace YimMenu
@@ -38,27 +38,8 @@ namespace YimMenu
 
 	void UIManager::DrawImpl()
 	{
-		int selectedIndex = Features::_StyleSelector.GetState();
-
-		// Render the selected theme based on the index, append when adding new themes
-		switch (static_cast<UITheme>(selectedIndex))
-		{
-		case UITheme::Classic:
-			RenderClassicTheme();
-			break;
-		case UITheme::Modern:
-			RenderModernTheme();
-			break;
-		case UITheme::ModernV:
-			RenderModernVTheme();
-			break;
-		case UITheme::Modular:
-			RenderModularTheme();
-			break;
-		default:
-			RenderClassicTheme(); // Default theme
-			break;
-		}
+		// Lumina uses Modern theme exclusively
+		RenderModernTheme();
 	}
 
 	std::shared_ptr<Submenu> UIManager::GetActiveSubmenuImpl()

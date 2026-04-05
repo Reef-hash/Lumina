@@ -63,8 +63,10 @@ namespace YimMenu
 
 	static void DrawNotification(Notification& notification, int position)
 	{
-		float y_pos = position * 100;
-		float x_pos = 10;
+		float y_pos = position * 110;
+		// Position on right side of screen
+		float screen_width = ImGui::GetIO().DisplaySize.x;
+		float x_pos = screen_width - m_CardSizeX - 20;
 		ImVec2 cardSize(m_CardSizeX, m_CardSizeY);
 
 		ImGui::SetNextWindowSize(cardSize, ImGuiCond_Always);
