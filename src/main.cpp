@@ -30,12 +30,12 @@ namespace YimMenu
 {
 	DWORD Main(void*)
 	{
-		const auto documents = std::filesystem::path(std::getenv("appdata")) / "ChronixV2";
+		const auto documents = std::filesystem::path(std::getenv("appdata")) / "Lumina";
 		FileMgr::Init(documents);
 
-		LogHelper::Init("ChronixV2", FileMgr::GetProjectFile("./cout.log"));
+		LogHelper::Init("Lumina", FileMgr::GetProjectFile("./cout.log"));
 
-		LOGF(INFO, "Welcome to ChronixV2! Build date: {} at {}", __DATE__, __TIME__);
+		LOGF(INFO, "Welcome to Lumina! Build date: {} at {}", __DATE__, __TIME__);
 
 		g_HotkeySystem.RegisterCommands();
 		SavedLocations::FetchSavedLocations();

@@ -27,7 +27,7 @@ namespace YimMenu
 			return;
 
 		static bool ensure_popup_open = [] {
-			ImGui::OpenPopup("Welcome to ChronixV2");
+			ImGui::OpenPopup("Welcome to Lumina");
 			GUI::SetOnboarding(true);
 			return true;
 		}();
@@ -38,7 +38,7 @@ namespace YimMenu
 		ImGui::SetNextWindowSize(window_size, ImGuiCond_Once);
 		ImGui::SetNextWindowPos(window_pos, ImGuiCond_Once);
 
-		if (ImGui::BeginPopupModal("Welcome to ChronixV2", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings))
+		if (ImGui::BeginPopupModal("Welcome to Lumina", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings))
 		{
 			static int tab = 0;
 			if (ImGui::BeginTabBar("##onboarding_tabs", ImGuiTabBarFlags_None))
@@ -48,15 +48,14 @@ namespace YimMenu
 				{
 					ImGui::PushTextWrapPos(0.0f);
 					ImGui::PushFont(YimMenu::Menu::Font::g_AwesomeFont); ImGui::TextUnformatted(ICON_FA_ROCKET); ImGui::PopFont();
-					ImGui::SameLine(); ImGui::Text("Welcome to ChronixV2!");
-					
+				ImGui::SameLine(); ImGui::TextColored(ImVec4(0.616f, 0.306f, 0.867f, 1.0f), "Welcome to Lumina!");
 					ImGui::Spacing();
 					ImGui::Separator();
 					ImGui::Spacing();
 
-					ImGui::TextWrapped("Press INSERT or Ctrl+\\ to open the menu. This tool gives you advanced control over GTA V with a modded experience.");
-					ImGui::Spacing();
-					ImGui::TextWrapped("ChronixV2 publishes builds every 12 hours and stays updated to the latest commits off of YimMenuV2's repository. Be sure to check GitHub frequently for new updates, experiment, and most importantly — enjoy!");
+ImGui::TextWrapped("Press INSERT or Ctrl+\\ to open the menu. Lumina offers advanced control over GTA V with a modern, neon-themed interface.");
+				ImGui::Spacing();
+				ImGui::TextWrapped("Lumina is a custom fork optimized with a sleek purple & yellow UI. Updates are pushed automatically to GitHub. Check back frequently, experiment, and enjoy the enhanced experience!");
 
 					ImGui::PopTextWrapPos();
 					ImGui::EndTabItem();
@@ -158,10 +157,10 @@ namespace YimMenu
 					ImGui::PushFont(YimMenu::Menu::Font::g_AwesomeFont); ImGui::TextUnformatted(ICON_FA_GITHUB); ImGui::PopFont();
 					ImGui::SameLine(); ImGui::Text("GitHub:");
 					ImGui::SameLine();
-					ImGui::TextColored(ImVec4(0.2f, 0.6f, 1.0f, 1.0f), "https://github.com/Deadlineem/ChronixV2");
-					if (ImGui::IsItemClicked())
-					{
-						ShellExecuteA(NULL, "open", "https://github.com/Deadlineem/ChronixV2", NULL, NULL, SW_SHOWNORMAL);
+ImGui::TextColored(ImVec4(0.616f, 0.306f, 0.867f, 1.0f), "https://github.com/Reef-hash/Lumina");
+				if (ImGui::IsItemClicked())
+				{
+					ShellExecuteA(NULL, "open", "https://github.com/Reef-hash/Lumina", NULL, NULL, SW_SHOWNORMAL);
 					}
 
 					// Matrix Link

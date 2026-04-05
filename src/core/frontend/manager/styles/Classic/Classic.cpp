@@ -34,7 +34,7 @@ namespace YimMenu
 			}
 			ImGui::EndChild();
 
-			ImGui::Text("ChronixV2");
+			ImGui::TextColored(ImVec4(0.616f, 0.306f, 0.867f, 1.0f), "Lumina");
 
 			pos.y -= 28;
 			ImGui::SetCursorPos(ImVec2(pos.x + 130, pos.y));
