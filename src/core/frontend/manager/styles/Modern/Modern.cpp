@@ -9,275 +9,225 @@
 
 namespace YimMenu
 {
-	// Constants for modern UI layout - OPTIMIZED SIZING
-	constexpr float SIDEBAR_WIDTH = 140.0f;          // Reduced from 180
-	constexpr float SIDEBAR_PADDING = 12.0f;         // Reduced padding
-	constexpr float MENU_ITEM_HEIGHT = 38.0f;
-	constexpr float HEADER_HEIGHT = 55.0f;           // Reduced from 70
-	constexpr float CORNER_ROUNDING = 12.0f;
-	constexpr float GLOW_THICKNESS = 2.0f;
-	
-	// Icon mapping for tabs
-	struct TabIcon {
-		const char* name;
-		const char* icon;  // Unicode icon
+	// Cherax-style layout constants
+	static constexpr float SIDEBAR_W   = 60.0f;
+	static constexpr float CAT_BAR_H   = 42.0f;
+	static constexpr float WIN_ROUNDING = 0.0f;
+
+	// Tab icon entries (matches submenu order in Menu.cpp)
+	static const char* TabIcons[] = {
+		"\xef\x80\x87",  // user (Self)         
+		"\xef\x86\xb9",  // car (Vehicle)       
+		"\xef\x8f\xa4",  // map-pin (Teleport)  
+		"\xef\x83\x82",  // globe (Network)     
+		"\xef\x83\x80",  // users (Players)     
+		"\xef\x83\xbc",  // earth (World)       
+		"\xef\x85\x95",  // money (Recovery)    
+		"\xef\x80\x93",  // cog (Settings)      
+		"\xef\x86\x88",  // bug (Debug)         
 	};
-	
-	static const TabIcon TabIcons[] = {
-		{"Self", "⚡"},
-		{"Vehicle", "🚗"},
-		{"Teleport", "📍"},
-		{"Network", "🌐"},
-		{"Players", "👥"},
-		{"World", "🌍"},
-		{"Recovery", "💰"},
-		{"Settings", "⚙️"},
-		{"Debug", "🐛"}
-	};
-	
-	// Helper function to draw rotating neon glow border
-	static void DrawAnimatedGlowBorder(ImDrawList* drawList, ImVec2 min, ImVec2 max, float thickness = GLOW_THICKNESS)
+	static const int TabIconCount = sizeof(TabIcons) / sizeof(TabIcons[0]);
+
+	// Animated gradient bar at top of window (like Cherax header bar)
+	static void DrawGradientBar(ImDrawList* dl, ImVec2 p, ImVec2 sz)
 	{
-		static auto start_time = std::chrono::high_resolution_clock::now();
-		auto now = std::chrono::high_resolution_clock::now();
-		float elapsed = std::chrono::duration<float>(now - start_time).count();
-		
-		// Rotating hue for glow
-		float hue = std::fmod(elapsed * 0.5f, 6.28f);
-		
-		// Create darker purple glow (not bright neon)
-		ImVec4 glow_color = ImVec4(
-			0.35f + std::sin(hue) * 0.15f,           // Darker purple
-			0.10f + std::cos(hue * 1.5f) * 0.1f,
-			0.55f + std::sin(hue * 0.7f) * 0.15f,
-			0.6f  // Lower alpha for subtlety
-		);
-		
-		ImU32 glow_col = ImGui::GetColorU32(glow_color);
-		
-		// Draw multiple layers for smooth glow effect
-		for (int i = 2; i >= 1; --i)
-		{
-			ImVec4 layer_color = glow_color;
-			layer_color.w = 0.3f / i;
-			ImU32 layer_col = ImGui::GetColorU32(layer_color);
-			
-			drawList->AddRect(
-				ImVec2(min.x - i * 1.0f, min.y - i * 1.0f),
-				ImVec2(max.x + i * 1.0f, max.y + i * 1.0f),
-				layer_col,
-				CORNER_ROUNDING,
-				0,
-				1.0f
-			);
-		}
-		
-		// Main border - darker
-		drawList->AddRect(min, max, glow_col, CORNER_ROUNDING, 0, thickness);
+		static auto t0 = std::chrono::steady_clock::now();
+		float t = std::chrono::duration<float>(std::chrono::steady_clock::now() - t0).count();
+		float shift = std::fmod(t * 0.4f, 6.28f);
+
+		ImU32 colL = ImGui::GetColorU32(ImVec4(
+			0.10f + 0.15f * std::sin(shift),
+			0.05f,
+			0.30f + 0.20f * std::cos(shift), 1.0f));
+		ImU32 colR = ImGui::GetColorU32(ImVec4(
+			0.40f + 0.10f * std::cos(shift),
+			0.10f,
+			0.60f + 0.10f * std::sin(shift), 1.0f));
+
+		dl->AddRectFilledMultiColor(p, ImVec2(p.x + sz.x, p.y + sz.y), colL, colR, colR, colL);
 	}
-	
-	// Draw sidebar menu item with icon
-	static void DrawMenuItemButton(ImDrawList* drawList, ImVec2 pos, ImVec2 size, const char* icon, const char* label, bool selected)
-	{
-		ImVec2 min = pos;
-		ImVec2 max = ImVec2(pos.x + size.x, pos.y + size.y);
-		
-		// Background - darker colors
-		ImVec4 bg_color = selected ? 
-			ImVec4(0.25f, 0.12f, 0.40f, 0.85f) :  // Active darker purple
-			ImVec4(0.10f, 0.08f, 0.15f, 0.5f);    // Inactive very dark
-		
-		drawList->AddRectFilled(min, max, ImGui::GetColorU32(bg_color), 8.0f);
-		
-		// Border - subtle
-		ImVec4 border_color = selected ?
-			ImVec4(0.40f, 0.20f, 0.65f, 0.8f) :   // Active border
-			ImVec4(0.30f, 0.12f, 0.50f, 0.3f);    // Inactive border
-		
-		drawList->AddRect(min, max, ImGui::GetColorU32(border_color), 8.0f, 0, 1.5f);
-		
-		// Icon (larger)
-		ImVec2 icon_size = ImGui::CalcTextSize(icon);
-		ImVec2 icon_pos = ImVec2(
-			pos.x + (size.x - icon_size.x) / 2,
-			pos.y + 5
-		);
-		
-		ImVec4 icon_color = selected ? 
-			ImVec4(0.80f, 0.40f, 1.0f, 1.0f) :    // Active glow purple
-			ImVec4(0.60f, 0.30f, 0.80f, 0.7f);    // Inactive darker purple
-		
-		drawList->AddText(icon_pos, ImGui::GetColorU32(icon_color), icon);
-		
-		// Label (small, below icon) - only for tooltip hover
-		if (selected)
-		{
-			ImVec2 label_size = ImGui::CalcTextSize(label);
-			ImVec2 label_pos = ImVec2(
-				pos.x + (size.x - label_size.x) / 2,
-				pos.y + size.y - 18
-			);
-			
-			ImVec4 label_color = ImVec4(0.85f, 0.85f, 0.85f, 0.8f);
-			drawList->AddText(label_pos, ImGui::GetColorU32(label_color), label);
-		}
-	}
-	
-	// Main modern theme render function
+
 	void RenderModernTheme()
 	{
 		YimMenu::SyncColorCommandsToStyle();
-		
-		ImGuiIO& io = ImGui::GetIO();
-		ImDrawList* drawList = ImGui::GetBackgroundDrawList();
-		
-		float screen_width = *YimMenu::Pointers.ScreenResX;
-		float screen_height = *YimMenu::Pointers.ScreenResY;
-		
-		const auto& submenus = YimMenu::UIManager::GetSubmenus();
-		auto activeSubmenu = YimMenu::UIManager::GetActiveSubmenu();
-		
-		// ═══════════════════════════════════════════════════════════════════
-		// SIDEBAR PANEL (Floating on left) - OPTIMIZED
-		// ═══════════════════════════════════════════════════════════════════
-		
-		static ImVec2 sidebar_offset = ImVec2(15, 120);
-		static bool dragging_sidebar = false;
-		
-		ImVec2 sidebar_min = sidebar_offset;
-		ImVec2 sidebar_max = ImVec2(sidebar_offset.x + SIDEBAR_WIDTH, sidebar_offset.y + screen_height - 180);
-		ImVec2 sidebar_size = sidebar_max - sidebar_min;
-		
-		// Sidebar background with glow - darker
-		drawList->AddRectFilled(
-			sidebar_min, 
-			sidebar_max, 
-			ImGui::GetColorU32(ImVec4(0.06f, 0.05f, 0.10f, 0.95f)),
-			CORNER_ROUNDING
-		);
-		
-		// Animated sidebar border glow
-		DrawAnimatedGlowBorder(drawList, sidebar_min, sidebar_max);
-		
-		// Lumina logo/title in sidebar
-		ImVec2 logo_pos = ImVec2(sidebar_min.x + SIDEBAR_PADDING, sidebar_min.y + 10);
-		drawList->AddText(YimMenu::Menu::Font::g_AwesomeFont, 24.0f, logo_pos, ImGui::GetColorU32(ImVec4(0.50f, 0.25f, 0.85f, 0.9f)), "ⓛ");
-		
-		// Sidebar menu items - ICON BASED
-		float menu_y = sidebar_min.y + 50;
-		for (size_t i = 0; i < submenus.size(); ++i)
+
+		float scrW = (float)*YimMenu::Pointers.ScreenResX;
+		float scrH = (float)*YimMenu::Pointers.ScreenResY;
+
+		// Window sizing — Cherax style: fixed size, centered
+		float winW = std::min(scrW * 0.50f, 780.0f);
+		float winH = std::min(scrH * 0.55f, 520.0f);
+
+		ImGui::SetNextWindowSize(ImVec2(winW, winH), ImGuiCond_FirstUseEver);
+		ImGui::SetNextWindowPos(
+			ImVec2((scrW - winW) * 0.5f, (scrH - winH) * 0.5f),
+			ImGuiCond_FirstUseEver);
+
+		// Override window style for this frame
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, WIN_ROUNDING);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+		ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.07f, 0.06f, 0.10f, 0.97f));
+
+		ImGuiWindowFlags wflags =
+			ImGuiWindowFlags_NoTitleBar |
+			ImGuiWindowFlags_NoCollapse |
+			ImGuiWindowFlags_NoScrollbar |
+			ImGuiWindowFlags_NoScrollWithMouse;
+
+		if (!ImGui::Begin("##LuminaMain", nullptr, wflags))
 		{
-			auto& submenu = submenus[i];
-			const char* icon = (i < sizeof(TabIcons) / sizeof(TabIcons[0])) ? TabIcons[i].icon : "•";
-			
-			ImVec2 item_pos = ImVec2(sidebar_min.x + 5, menu_y);
-			ImVec2 item_size = ImVec2(SIDEBAR_WIDTH - 10, MENU_ITEM_HEIGHT);
-			
-			bool is_selected = (submenu == activeSubmenu);
-			DrawMenuItemButton(drawList, item_pos, item_size, icon, submenu->m_Name.c_str(), is_selected);
-			
-			// Click detection for sidebar items
-			ImGui::SetCursorScreenPos(item_pos);
-			ImGui::InvisibleButton(std::format("##sidebar_item_{}", i).c_str(), item_size);
-			
-			if (ImGui::IsItemClicked())
+			ImGui::End();
+			ImGui::PopStyleColor();
+			ImGui::PopStyleVar(3);
+			return;
+		}
+
+		ImGui::PopStyleColor();
+		ImGui::PopStyleVar(3);
+
+		ImDrawList* dl = ImGui::GetWindowDrawList();
+		ImVec2 wPos  = ImGui::GetWindowPos();
+		ImVec2 wSize = ImGui::GetWindowSize();
+
+		// ── Animated gradient header bar (4px) ──────────────────────
+		DrawGradientBar(dl, wPos, ImVec2(wSize.x, 4.0f));
+
+		const auto& submenus   = YimMenu::UIManager::GetSubmenus();
+		auto activeSubmenu     = YimMenu::UIManager::GetActiveSubmenu();
+
+		// ════════════════════════════════════════════════════════════
+		//  LEFT SIDEBAR  (icon tabs, dark background)
+		// ════════════════════════════════════════════════════════════
+		ImGui::SetCursorPos(ImVec2(0, 4.0f));
+
+		ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.05f, 0.04f, 0.08f, 1.0f));
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 8));
+
+		if (ImGui::BeginChild("##sidebar", ImVec2(SIDEBAR_W, 0), true,
+			ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
+		{
+			// Lumina "L" brand icon at top
+			ImGui::PushFont(YimMenu::Menu::Font::g_AwesomeFont);
 			{
-				YimMenu::UIManager::SetActiveSubmenu(submenu);
-				YimMenu::UIManager::SetShowContentWindow(true);
+				const char* brand = "\xef\x86\xa2"; // star icon  
+				ImVec2 ts = ImGui::CalcTextSize(brand);
+				ImGui::SetCursorPosX((SIDEBAR_W - ts.x) * 0.5f);
+				ImGui::SetCursorPosY(6.0f);
+				ImGui::TextColored(ImVec4(0.55f, 0.25f, 0.85f, 1.0f), "%s", brand);
 			}
-			
-			menu_y += MENU_ITEM_HEIGHT;
-		}
-		
-		// Sidebar drag handle (top area)
-		ImGui::SetCursorScreenPos(sidebar_min);
-		ImGui::InvisibleButton("##sidebar_drag", ImVec2(SIDEBAR_WIDTH, 45));
-		if (ImGui::IsItemActive() && ImGui::IsMouseDragging(ImGuiMouseButton_Left))
-		{
-			ImVec2 delta = io.MouseDelta;
-			sidebar_offset += delta;
-		}
-		
-		// ═══════════════════════════════════════════════════════════════════
-		// MAIN CONTENT WINDOW (Right of sidebar) - FIXED SIZE
-		// ═══════════════════════════════════════════════════════════════════
-		
-		if (YimMenu::UIManager::ShowingContentWindow() && activeSubmenu)
-		{
-			float content_start_x = sidebar_max.x + 12;
-			float content_width = screen_width - content_start_x - 18;
-			float content_start_y = 120;
-			float content_height = screen_height - content_start_y - 30;
-			
-			ImVec2 content_min = ImVec2(content_start_x, content_start_y);
-			ImVec2 content_max = ImVec2(content_start_x + content_width, content_start_y + content_height);
-			
-			// Content window background - darker
-			drawList->AddRectFilled(
-				content_min,
-				content_max,
-				ImGui::GetColorU32(ImVec4(0.06f, 0.05f, 0.10f, 0.93f)),
-				CORNER_ROUNDING
-			);
-			
-			// Animated content border
-			DrawAnimatedGlowBorder(drawList, content_min, content_max);
-			
-			// ─────────────────────────────────────────────────────────
-			// HEADER SECTION (Category tabs) - OPTIMIZED
-			// ─────────────────────────────────────────────────────────
-			
-			ImVec2 header_min = ImVec2(content_min.x + 8, content_min.y + 8);
-			ImVec2 header_max = ImVec2(content_max.x - 8, content_min.y + HEADER_HEIGHT);
-			
-			// Header background - darker
-			drawList->AddRectFilled(
-				header_min,
-				header_max,
-				ImGui::GetColorU32(ImVec4(0.08f, 0.06f, 0.12f, 0.7f)),
-				9.0f
-			);
-			
-			// Header border with subtle glow
-			drawList->AddRect(
-				header_min,
-				header_max,
-				ImGui::GetColorU32(ImVec4(0.30f, 0.12f, 0.50f, 0.5f)),
-				9.0f,
-				0,
-				1.5f
-			);
-			
-			// Category tabs in header - FIXED EndChild()
-			ImGui::SetCursorScreenPos(header_min + ImVec2(12, 8));
-			ImGui::BeginChild("##header_tabs", ImVec2(header_max.x - header_min.x - 24, HEADER_HEIGHT - 16), false, ImGuiWindowFlags_NoBackground);
+			ImGui::PopFont();
+
+			ImGui::Dummy(ImVec2(0, 6));
+			ImGui::Separator();
+			ImGui::Dummy(ImVec2(0, 4));
+
+			// Sidebar tab icons
+			ImGui::PushFont(YimMenu::Menu::Font::g_AwesomeFont);
+			for (size_t i = 0; i < submenus.size(); ++i)
 			{
-				if (activeSubmenu)
+				auto& sub = submenus[i];
+				bool active = (sub == activeSubmenu);
+				const char* ico = (i < TabIconCount) ? TabIcons[i] : "\xef\x81\x99"; // question fallback
+
+				// Highlight bar for active tab
+				if (active)
+				{
+					ImVec2 cPos = ImGui::GetCursorScreenPos();
+					dl->AddRectFilled(
+						cPos,
+						ImVec2(cPos.x + 3, cPos.y + 28),
+						ImGui::GetColorU32(ImVec4(0.55f, 0.25f, 0.85f, 1.0f)),
+						1.0f);
+				}
+
+				ImVec2 ts = ImGui::CalcTextSize(ico);
+				ImGui::SetCursorPosX((SIDEBAR_W - ts.x) * 0.5f);
+
+				if (active)
+					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.75f, 0.45f, 1.0f, 1.0f));
+				else
+					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.45f, 0.40f, 0.55f, 1.0f));
+
+				ImGui::PushID((int)i);
+				if (ImGui::Selectable(ico, active, ImGuiSelectableFlags_None, ImVec2(SIDEBAR_W, 28)))
+				{
+					YimMenu::UIManager::SetActiveSubmenu(sub);
+					YimMenu::UIManager::SetShowContentWindow(true);
+				}
+
+				// Tooltip with submenu name on hover
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::PopFont(); // back to default font for tooltip
+					ImGui::BeginTooltip();
+					ImGui::TextUnformatted(sub->m_Name.c_str());
+					ImGui::EndTooltip();
+					ImGui::PushFont(YimMenu::Menu::Font::g_AwesomeFont);
+				}
+
+				ImGui::PopID();
+				ImGui::PopStyleColor();
+			}
+			ImGui::PopFont();
+		}
+		ImGui::EndChild();
+		ImGui::PopStyleVar();
+		ImGui::PopStyleColor();
+
+		// ════════════════════════════════════════════════════════════
+		//  RIGHT CONTENT AREA
+		// ════════════════════════════════════════════════════════════
+		ImGui::SameLine();
+
+		float contentW = wSize.x - SIDEBAR_W - 2;
+		float contentH = wSize.y - 4.0f; // minus gradient bar
+
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10, 6));
+		ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.08f, 0.07f, 0.11f, 1.0f));
+
+		if (ImGui::BeginChild("##content_area", ImVec2(contentW, contentH), false, ImGuiWindowFlags_NoScrollbar))
+		{
+			if (activeSubmenu)
+			{
+				// ── Submenu title ───────────────────────────────────
+				ImGui::PushFont(YimMenu::Menu::Font::g_DefaultFont);
+				ImGui::TextColored(ImVec4(0.65f, 0.35f, 0.90f, 1.0f), "%s", activeSubmenu->m_Name.c_str());
+				ImGui::PopFont();
+
+				ImGui::SameLine(contentW - 30);
+				ImGui::TextColored(ImVec4(0.35f, 0.30f, 0.45f, 0.7f), "Lumina");
+
+				// ── Category tab bar ────────────────────────────────
+				ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.06f, 0.05f, 0.09f, 1.0f));
+				if (ImGui::BeginChild("##cat_bar", ImVec2(0, CAT_BAR_H), true, ImGuiWindowFlags_NoScrollbar))
+				{
 					activeSubmenu->DrawCategorySelectors();
-			}
-			ImGui::EndChild();
-			
-			// ─────────────────────────────────────────────────────────
-			// CONTENT AREA (Options panels) - FIXED EndChild()
-			// ─────────────────────────────────────────────────────────
-			
-			ImVec2 content_area_min = ImVec2(content_min.x + 8, header_max.y + 10);
-			ImVec2 content_area_max = ImVec2(content_max.x - 8, content_max.y - 8);
-			
-			ImGui::SetCursorScreenPos(content_area_min);
-			ImGui::BeginChild("##options_content", content_area_max - content_area_min, false, ImGuiWindowFlags_NoBackground);
-			{
-				ImFont* optionsFont = YimMenu::UIManager::GetOptionsFont();
-				if (optionsFont)
-					ImGui::PushFont(optionsFont);
-				
-				if (activeSubmenu)
+				}
+				ImGui::EndChild();
+				ImGui::PopStyleColor();
+
+				ImGui::Spacing();
+
+				// ── Options content ─────────────────────────────────
+				if (ImGui::BeginChild("##options", ImVec2(0, 0), true))
+				{
+					auto optFont = YimMenu::UIManager::GetOptionsFont();
+					if (optFont)
+						ImGui::PushFont(optFont);
+
 					activeSubmenu->Draw();
-				
-				if (optionsFont)
-					ImGui::PopFont();
+
+					if (optFont)
+						ImGui::PopFont();
+				}
+				ImGui::EndChild();
 			}
-			ImGui::EndChild();
 		}
+		ImGui::EndChild();
+		ImGui::PopStyleColor();
+		ImGui::PopStyleVar();
+
+		ImGui::End();
 	}
 }
