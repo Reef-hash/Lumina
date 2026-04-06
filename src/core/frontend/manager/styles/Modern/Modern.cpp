@@ -174,15 +174,43 @@ namespace YimMenu
 
 		if (ImGui::BeginChild("##content_area", ImVec2(contentW, contentH), false, ImGuiWindowFlags_NoScrollbar))
 		{
-			if (activeSubmenu)
+			ImDrawList* cdl = ImGui::GetWindowDrawList();
+			ImVec2 winP = ImGui::GetWindowPos();
+
+			// ── LUMINA Header Bar (edge-to-edge) ────────────────
 			{
-				// ── Submenu title ───────────────────────────────────
-				ImGui::PushFont(YimMenu::Menu::Font::g_DefaultFont);
-				ImGui::TextColored(ImVec4(0.65f, 0.35f, 0.90f, 1.0f), "%s", activeSubmenu->m_Name.c_str());
+				float headerH = 38.0f;
+
+				// Dark header background
+				cdl->AddRectFilled(winP,
+					ImVec2(winP.x + contentW, winP.y + headerH),
+					ImGui::GetColorU32(ImVec4(0.04f, 0.03f, 0.06f, 1.0f)));
+
+				// Purple accent line at bottom of header
+				cdl->AddRectFilled(
+					ImVec2(winP.x, winP.y + headerH - 2),
+					ImVec2(winP.x + contentW, winP.y + headerH),
+					ImGui::GetColorU32(ImVec4(0.45f, 0.20f, 0.70f, 0.6f)));
+
+				// Centered "LUMINA" text
+				ImGui::PushFont(YimMenu::Menu::Font::g_ChatFont);
+				ImVec2 ts = ImGui::CalcTextSize("LUMINA");
+				ImGui::SetCursorScreenPos(ImVec2(
+					winP.x + (contentW - ts.x) * 0.5f,
+					winP.y + (headerH - 2 - ts.y) * 0.5f));
+				ImGui::TextColored(ImVec4(0.65f, 0.35f, 0.90f, 1.0f), "LUMINA");
 				ImGui::PopFont();
 
-				ImGui::SameLine(contentW - 30);
-				ImGui::TextColored(ImVec4(0.35f, 0.30f, 0.45f, 0.7f), "Lumina");
+				// Position cursor below header
+				ImGui::SetCursorScreenPos(ImVec2(winP.x + 10, winP.y + headerH + 4));
+			}
+
+			if (activeSubmenu)
+			{
+				// ── Submenu name ────────────────────────────────────
+				ImGui::PushFont(YimMenu::Menu::Font::g_DefaultFont);
+				ImGui::TextColored(ImVec4(0.55f, 0.40f, 0.80f, 1.0f), "%s", activeSubmenu->m_Name.c_str());
+				ImGui::PopFont();
 
 				// ── Category tab bar ────────────────────────────────
 				ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.06f, 0.05f, 0.09f, 1.0f));
@@ -196,7 +224,7 @@ namespace YimMenu
 				ImGui::Spacing();
 
 				// ── Options content ─────────────────────────────────
-				if (ImGui::BeginChild("##options", ImVec2(0, 0), true))
+				if (ImGui::BeginChild("##options", ImVec2(0, 0), false))
 				{
 					auto optFont = YimMenu::UIManager::GetOptionsFont();
 					if (optFont)
