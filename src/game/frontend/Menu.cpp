@@ -104,18 +104,14 @@ namespace YimMenu
 		Menu::Font::g_ChatFont = CreateFontWithCyrillicSupport(IO, Menu::Font::g_ChatFontSize);
 		Menu::Font::g_OverlayFont = CreateFontWithCyrillicSupport(IO, Menu::Font::g_OverlayFontSize);
 
-		// Header font — try Eurostile from Lumina fonts folder, fallback to built-in
+		// Header font — Orbitron Black (embedded, Eurostile-style)
 		{
-			auto euroPath = std::filesystem::path(std::getenv("appdata")) / "Lumina" / "fonts" / "eurostile.ttf";
-			if (std::filesystem::exists(euroPath))
-			{
-				Menu::Font::g_HeaderFont = IO.Fonts->AddFontFromFileTTF(
-					euroPath.string().c_str(), Menu::Font::g_HeaderFontSize);
-			}
-			else
-			{
-				Menu::Font::g_HeaderFont = CreateFontWithCyrillicSupport(IO, Menu::Font::g_HeaderFontSize);
-			}
+			ImFontConfig HeaderCfg{};
+			HeaderCfg.FontDataOwnedByAtlas = false;
+			Menu::Font::g_HeaderFont = IO.Fonts->AddFontFromMemoryTTF(
+				const_cast<std::uint8_t*>(Fonts::HeaderFont),
+				sizeof(Fonts::HeaderFont),
+				Menu::Font::g_HeaderFontSize, &HeaderCfg);
 		}
 
 		static const ImWchar full_range[] = {0x0020, 0xFFFF, 0};
