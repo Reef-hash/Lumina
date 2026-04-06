@@ -3,6 +3,7 @@
 #include "core/logger/LogHelper.hpp"
 #include "core/backend/FiberPool.hpp"
 #include "core/util/Joaat.hpp"
+#include "game/frontend/Menu.hpp"
 
 #include <mutex>
 
@@ -82,31 +83,32 @@ namespace YimMenu
 		// Determine color based on notification type
 		ImVec4 borderColor;
 		ImVec4 accentColor;
-		const char* icon = "ℹ️";
+		// FontAwesome icons for notification types
+		const char* icon = "\xef\x81\x9a"; // fa-info-circle
 		
 		if (notification.m_Type == NotificationType::Info)
 		{
 			borderColor = ImVec4(0.2f, 0.6f, 1.0f, 0.8f);      // Cyan-blue
 			accentColor = ImVec4(0.3f, 0.7f, 1.0f, 1.0f);     // Bright cyan
-			icon = "ℹ️";
+			icon = "\xef\x81\x9a"; // fa-info-circle (U+F05A)
 		}
 		else if (notification.m_Type == NotificationType::Success)
 		{
 			borderColor = ImVec4(0.0f, 0.8f, 0.2f, 0.8f);      // Green
 			accentColor = ImVec4(0.2f, 1.0f, 0.4f, 1.0f);     // Bright green
-			icon = "✓";
+			icon = "\xef\x80\x8c"; // fa-check (U+F00C)
 		}
 		else if (notification.m_Type == NotificationType::Warning)
 		{
 			borderColor = ImVec4(1.0f, 0.7f, 0.0f, 0.8f);      // Orange
 			accentColor = ImVec4(1.0f, 0.85f, 0.2f, 1.0f);     // Bright orange
-			icon = "⚠️";
+			icon = "\xef\x81\xb1"; // fa-exclamation-triangle (U+F071)
 		}
 		else if (notification.m_Type == NotificationType::Error)
 		{
 			borderColor = ImVec4(1.0f, 0.2f, 0.2f, 0.8f);      // Red
 			accentColor = ImVec4(1.0f, 0.4f, 0.4f, 1.0f);     // Bright red
-			icon = "✕";
+			icon = "\xef\x80\x8d"; // fa-times (U+F00D)
 		}
 
 		// Draw glowing border effect
@@ -135,9 +137,15 @@ namespace YimMenu
 		ImGui::ProgressBar(depletionProgress, ImVec2(-1, 4.0f), "");
 		ImGui::PopStyleColor();
 
-		// Title with icon
+		// Title with icon (render icon in FontAwesome font, title in default)
 		ImGui::PushStyleColor(ImGuiCol_Text, accentColor);
-		ImGui::TextColored(accentColor, "%s %s", icon, notification.m_Title.c_str());
+		if (YimMenu::Menu::Font::g_AwesomeFont)
+			ImGui::PushFont(YimMenu::Menu::Font::g_AwesomeFont);
+		ImGui::TextColored(accentColor, "%s", icon);
+		if (YimMenu::Menu::Font::g_AwesomeFont)
+			ImGui::PopFont();
+		ImGui::SameLine();
+		ImGui::TextColored(accentColor, "%s", notification.m_Title.c_str());
 		ImGui::PopStyleColor();
 
 		ImGui::Separator();

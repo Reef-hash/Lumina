@@ -58,7 +58,6 @@ namespace YimMenu::Submenus
 			ImGui::SetNextWindowSize(ImVec2(215, ImGui::GetWindowSize().y));
 			ImGui::Begin("Player List", nullptr, ImGuiWindowFlags_NoDecoration);
 
-			BoolCommandItem("spectate"_J).Draw();
 			for (auto& [id, player] : sortedPlayers)
 			{
 				std::string display_name = player.GetName();

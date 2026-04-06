@@ -14,20 +14,6 @@ namespace YimMenu
 	static constexpr float CAT_BAR_H   = 42.0f;
 	static constexpr float WIN_ROUNDING = 0.0f;
 
-	// Tab icon entries (matches submenu order in Menu.cpp)
-	static const char* TabIcons[] = {
-		"\xef\x80\x87",  // user (Self)         
-		"\xef\x86\xb9",  // car (Vehicle)       
-		"\xef\x8f\xa4",  // map-pin (Teleport)  
-		"\xef\x83\x82",  // globe (Network)     
-		"\xef\x83\x80",  // users (Players)     
-		"\xef\x83\xbc",  // earth (World)       
-		"\xef\x85\x95",  // money (Recovery)    
-		"\xef\x80\x93",  // cog (Settings)      
-		"\xef\x86\x88",  // bug (Debug)         
-	};
-	static const int TabIconCount = sizeof(TabIcons) / sizeof(TabIcons[0]);
-
 	// Animated gradient bar at top of window (like Cherax header bar)
 	static void DrawGradientBar(ImDrawList* dl, ImVec2 p, ImVec2 sz)
 	{
@@ -107,10 +93,10 @@ namespace YimMenu
 		if (ImGui::BeginChild("##sidebar", ImVec2(SIDEBAR_W, 0), true,
 			ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
 		{
-			// Lumina "L" brand icon at top
-			ImGui::PushFont(YimMenu::Menu::Font::g_AwesomeFont);
+			// Lumina brand "L" at top
+			ImGui::PushFont(YimMenu::Menu::Font::g_DefaultFont);
 			{
-				const char* brand = "\xef\x86\xa2"; // star icon  
+				const char* brand = "L";
 				ImVec2 ts = ImGui::CalcTextSize(brand);
 				ImGui::SetCursorPosX((SIDEBAR_W - ts.x) * 0.5f);
 				ImGui::SetCursorPosY(6.0f);
@@ -128,7 +114,7 @@ namespace YimMenu
 			{
 				auto& sub = submenus[i];
 				bool active = (sub == activeSubmenu);
-				const char* ico = (i < TabIconCount) ? TabIcons[i] : "\xef\x81\x99"; // question fallback
+				const char* ico = sub->m_Icon.empty() ? "?" : sub->m_Icon.c_str();
 
 				// Highlight bar for active tab
 				if (active)
