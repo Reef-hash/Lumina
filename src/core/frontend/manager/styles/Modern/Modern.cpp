@@ -76,38 +76,52 @@ namespace YimMenu
 		ImVec2 wPos  = ImGui::GetWindowPos();
 		ImVec2 wSize = ImGui::GetWindowSize();
 
-		// ── Animated gradient header bar (4px) ──────────────────────
+		// ── Animated gradient bar (4px, full width) ────────────────
 		DrawGradientBar(dl, wPos, ImVec2(wSize.x, 4.0f));
 
+		// ── LUMINA Header (full width, spans sidebar + content) ────
+		constexpr float HEADER_H = 40.0f;
+		float headerY = wPos.y + 4.0f;
+
+		dl->AddRectFilled(
+			ImVec2(wPos.x, headerY),
+			ImVec2(wPos.x + wSize.x, headerY + HEADER_H),
+			ImGui::GetColorU32(ImVec4(0.04f, 0.03f, 0.06f, 1.0f)));
+		dl->AddRectFilled(
+			ImVec2(wPos.x, headerY + HEADER_H - 2),
+			ImVec2(wPos.x + wSize.x, headerY + HEADER_H),
+			ImGui::GetColorU32(ImVec4(0.45f, 0.20f, 0.70f, 0.6f)));
+
+		{
+			ImFont* hFont = YimMenu::Menu::Font::g_HeaderFont
+				? YimMenu::Menu::Font::g_HeaderFont
+				: YimMenu::Menu::Font::g_OverlayFont;
+			ImGui::PushFont(hFont);
+			ImVec2 hts = ImGui::CalcTextSize("LUMINA");
+			float hFontSz = ImGui::GetFontSize();
+			ImGui::PopFont();
+			dl->AddText(hFont, hFontSz,
+				ImVec2(wPos.x + (wSize.x - hts.x) * 0.5f,
+				       headerY + (HEADER_H - 2 - hts.y) * 0.5f),
+				ImGui::GetColorU32(ImVec4(0.65f, 0.35f, 0.90f, 1.0f)),
+				"LUMINA");
+		}
+
+		float bodyY = 4.0f + HEADER_H;
 		const auto& submenus   = YimMenu::UIManager::GetSubmenus();
 		auto activeSubmenu     = YimMenu::UIManager::GetActiveSubmenu();
 
 		// ════════════════════════════════════════════════════════════
-		//  LEFT SIDEBAR  (icon tabs, dark background)
+		//  LEFT SIDEBAR  (icon tabs, no brand)
 		// ════════════════════════════════════════════════════════════
-		ImGui::SetCursorPos(ImVec2(0, 4.0f));
+		ImGui::SetCursorPos(ImVec2(0, bodyY));
 
 		ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.05f, 0.04f, 0.08f, 1.0f));
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 8));
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 6));
 
 		if (ImGui::BeginChild("##sidebar", ImVec2(SIDEBAR_W, 0), true,
 			ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
 		{
-			// Lumina brand "L" at top (centered)
-			{
-				ImGui::PushFont(YimMenu::Menu::Font::g_DefaultFont);
-				const char* brand = "L";
-				ImVec2 ts = ImGui::CalcTextSize(brand);
-				float padX = (SIDEBAR_W - ts.x) * 0.5f;
-				ImGui::SetCursorPos(ImVec2(padX, 8.0f));
-				ImGui::TextColored(ImVec4(0.55f, 0.25f, 0.85f, 1.0f), "%s", brand);
-				ImGui::PopFont();
-			}
-
-			ImGui::Dummy(ImVec2(0, 4));
-			ImGui::Separator();
-			ImGui::Dummy(ImVec2(0, 4));
-
 			// Sidebar tab icons — draw centered in each row
 			constexpr float ICON_ROW_H = 36.0f;
 
@@ -185,46 +199,13 @@ namespace YimMenu
 		ImGui::SameLine();
 
 		float contentW = wSize.x - SIDEBAR_W - 2;
-		float contentH = wSize.y - 4.0f; // minus gradient bar
+		float contentH = wSize.y - bodyY;
 
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10, 6));
 		ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.08f, 0.07f, 0.11f, 1.0f));
 
 		if (ImGui::BeginChild("##content_area", ImVec2(contentW, contentH), false, ImGuiWindowFlags_NoScrollbar))
 		{
-			ImDrawList* cdl = ImGui::GetWindowDrawList();
-			ImVec2 winP = ImGui::GetWindowPos();
-
-			// ── LUMINA Header Bar (edge-to-edge) ────────────────
-			{
-				float headerH = 48.0f;
-
-				// Dark header background
-				cdl->AddRectFilled(winP,
-					ImVec2(winP.x + contentW, winP.y + headerH),
-					ImGui::GetColorU32(ImVec4(0.04f, 0.03f, 0.06f, 1.0f)));
-
-				// Purple accent line at bottom of header
-				cdl->AddRectFilled(
-					ImVec2(winP.x, winP.y + headerH - 2),
-					ImVec2(winP.x + contentW, winP.y + headerH),
-					ImGui::GetColorU32(ImVec4(0.45f, 0.20f, 0.70f, 0.6f)));
-
-				// Centered "LUMINA" text — use largest available font
-				ImGui::PushFont(YimMenu::Menu::Font::g_HeaderFont
-					? YimMenu::Menu::Font::g_HeaderFont
-					: YimMenu::Menu::Font::g_OverlayFont);
-				ImVec2 ts = ImGui::CalcTextSize("LUMINA");
-				ImGui::SetCursorScreenPos(ImVec2(
-					winP.x + (contentW - ts.x) * 0.5f,
-					winP.y + (headerH - 2 - ts.y) * 0.5f));
-				ImGui::TextColored(ImVec4(0.65f, 0.35f, 0.90f, 1.0f), "LUMINA");
-				ImGui::PopFont();
-
-				// Position cursor below header
-				ImGui::SetCursorScreenPos(ImVec2(winP.x + 10, winP.y + headerH + 4));
-			}
-
 			if (activeSubmenu)
 			{
 				// ── Submenu name ────────────────────────────────────
@@ -247,10 +228,9 @@ namespace YimMenu
 						if (!cat) continue;
 						bool catActive = (cat == activeCategory);
 
-						if (catActive)
-							ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.80f, 0.55f, 1.0f, 1.0f));
-						else
-							ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.50f, 0.42f, 0.60f, 1.0f));
+						ImGui::PushStyleColor(ImGuiCol_Text,
+							catActive ? ImVec4(0.80f, 0.55f, 1.0f, 1.0f)
+							          : ImVec4(0.50f, 0.42f, 0.60f, 1.0f));
 
 						ImGui::PushID((int)ci);
 						if (ImGui::Selectable(cat->m_Name.c_str(), catActive, 0,
@@ -259,7 +239,6 @@ namespace YimMenu
 							activeSubmenu->SetActiveCategory(cat);
 						}
 
-						// Underline active tab
 						if (catActive)
 						{
 							ImVec2 mn = ImGui::GetItemRectMin();
@@ -282,14 +261,26 @@ namespace YimMenu
 				ImGui::Separator();
 				ImGui::Spacing();
 
-				// ── Options content ─────────────────────────────────
+				// ── Options content (two-column card layout) ────────
 				if (ImGui::BeginChild("##options", ImVec2(0, 0), false))
 				{
 					auto optFont = YimMenu::UIManager::GetOptionsFont();
 					if (optFont)
 						ImGui::PushFont(optFont);
 
-					activeSubmenu->Draw();
+					auto activeCat = activeSubmenu->GetActiveCategory();
+					if (activeCat)
+					{
+						auto& items = activeCat->GetItems();
+						ImGui::Columns(2, "##grp_cols", false);
+						for (size_t i = 0; i < items.size(); ++i)
+						{
+							if (items[i] && items[i]->CanDraw())
+								items[i]->Draw();
+							ImGui::NextColumn();
+						}
+						ImGui::Columns(1);
+					}
 
 					if (optFont)
 						ImGui::PopFont();
