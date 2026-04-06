@@ -17,6 +17,11 @@ namespace YimMenu
 			return m_ActiveCategory;
 		}
 
+		const std::vector<std::shared_ptr<Category>>& GetCategories() const
+		{
+			return m_Categories;
+		}
+
 		void AddCategory(std::shared_ptr<Category>&& category);
 		void DrawCategorySelectors();
 		void SetActiveCategory(const std::shared_ptr<Category> category);

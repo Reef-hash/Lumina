@@ -93,69 +93,87 @@ namespace YimMenu
 		if (ImGui::BeginChild("##sidebar", ImVec2(SIDEBAR_W, 0), true,
 			ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
 		{
-			// Lumina brand "L" at top
-			ImGui::PushFont(YimMenu::Menu::Font::g_DefaultFont);
+			// Lumina brand "L" at top (centered)
 			{
+				ImGui::PushFont(YimMenu::Menu::Font::g_DefaultFont);
 				const char* brand = "L";
 				ImVec2 ts = ImGui::CalcTextSize(brand);
-				ImGui::SetCursorPosX((SIDEBAR_W - ts.x) * 0.5f);
-				ImGui::SetCursorPosY(6.0f);
+				float padX = (SIDEBAR_W - ts.x) * 0.5f;
+				ImGui::SetCursorPos(ImVec2(padX, 8.0f));
 				ImGui::TextColored(ImVec4(0.55f, 0.25f, 0.85f, 1.0f), "%s", brand);
+				ImGui::PopFont();
 			}
-			ImGui::PopFont();
 
-			ImGui::Dummy(ImVec2(0, 6));
+			ImGui::Dummy(ImVec2(0, 4));
 			ImGui::Separator();
 			ImGui::Dummy(ImVec2(0, 4));
 
-			// Sidebar tab icons
-			ImGui::PushFont(YimMenu::Menu::Font::g_AwesomeFont);
+			// Sidebar tab icons — draw centered in each row
+			constexpr float ICON_ROW_H = 36.0f;
+
 			for (size_t i = 0; i < submenus.size(); ++i)
 			{
 				auto& sub = submenus[i];
 				bool active = (sub == activeSubmenu);
 				const char* ico = sub->m_Icon.empty() ? "?" : sub->m_Icon.c_str();
 
-				// Highlight bar for active tab
+				ImVec2 rowStart = ImGui::GetCursorScreenPos();
+
+				// Active highlight — full-width purple box
 				if (active)
 				{
-					ImVec2 cPos = ImGui::GetCursorScreenPos();
 					dl->AddRectFilled(
-						cPos,
-						ImVec2(cPos.x + 3, cPos.y + 28),
-						ImGui::GetColorU32(ImVec4(0.55f, 0.25f, 0.85f, 1.0f)),
-						1.0f);
+						rowStart,
+						ImVec2(rowStart.x + SIDEBAR_W, rowStart.y + ICON_ROW_H),
+						ImGui::GetColorU32(ImVec4(0.30f, 0.15f, 0.50f, 0.6f)),
+						4.0f);
+					// Left accent bar
+					dl->AddRectFilled(
+						rowStart,
+						ImVec2(rowStart.x + 3, rowStart.y + ICON_ROW_H),
+						ImGui::GetColorU32(ImVec4(0.55f, 0.25f, 0.85f, 1.0f)));
 				}
 
-				ImVec2 ts = ImGui::CalcTextSize(ico);
-				ImGui::SetCursorPosX((SIDEBAR_W - ts.x) * 0.5f);
-
-				if (active)
-					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.75f, 0.45f, 1.0f, 1.0f));
-				else
-					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.45f, 0.40f, 0.55f, 1.0f));
-
+				// Invisible selectable for click detection
 				ImGui::PushID((int)i);
-				if (ImGui::Selectable(ico, active, ImGuiSelectableFlags_None, ImVec2(SIDEBAR_W, 28)))
+				if (ImGui::InvisibleButton("##tab", ImVec2(SIDEBAR_W, ICON_ROW_H)))
 				{
 					YimMenu::UIManager::SetActiveSubmenu(sub);
 					YimMenu::UIManager::SetShowContentWindow(true);
 				}
 
-				// Tooltip with submenu name on hover
+				// Tooltip on hover
 				if (ImGui::IsItemHovered())
 				{
-					ImGui::PopFont(); // back to default font for tooltip
 					ImGui::BeginTooltip();
 					ImGui::TextUnformatted(sub->m_Name.c_str());
 					ImGui::EndTooltip();
-					ImGui::PushFont(YimMenu::Menu::Font::g_AwesomeFont);
-				}
 
+					// Hover highlight
+					if (!active)
+					{
+						dl->AddRectFilled(
+							rowStart,
+							ImVec2(rowStart.x + SIDEBAR_W, rowStart.y + ICON_ROW_H),
+							ImGui::GetColorU32(ImVec4(0.20f, 0.12f, 0.35f, 0.4f)),
+							4.0f);
+					}
+				}
 				ImGui::PopID();
-				ImGui::PopStyleColor();
+
+				// Draw icon text centered over the invisible button
+				ImGui::PushFont(YimMenu::Menu::Font::g_AwesomeFont);
+				ImVec2 ts = ImGui::CalcTextSize(ico);
+				ImVec2 iconPos(
+					rowStart.x + (SIDEBAR_W - ts.x) * 0.5f,
+					rowStart.y + (ICON_ROW_H - ts.y) * 0.5f);
+				ImU32 iconCol = active
+					? ImGui::GetColorU32(ImVec4(0.80f, 0.55f, 1.0f, 1.0f))
+					: ImGui::GetColorU32(ImVec4(0.50f, 0.42f, 0.60f, 1.0f));
+				dl->AddText(YimMenu::Menu::Font::g_AwesomeFont, ImGui::GetFontSize(),
+					iconPos, iconCol, ico);
+				ImGui::PopFont();
 			}
-			ImGui::PopFont();
 		}
 		ImGui::EndChild();
 		ImGui::PopStyleVar();
@@ -214,15 +232,54 @@ namespace YimMenu
 				ImGui::TextColored(ImVec4(0.55f, 0.40f, 0.80f, 1.0f), "%s", activeSubmenu->m_Name.c_str());
 				ImGui::PopFont();
 
-				// ── Category tab bar ────────────────────────────────
-				ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.06f, 0.05f, 0.09f, 1.0f));
-				if (ImGui::BeginChild("##cat_bar", ImVec2(0, CAT_BAR_H), true, ImGuiWindowFlags_NoScrollbar))
+				// ── Category tabs (Cherax-style text tabs) ────────────
 				{
-					activeSubmenu->DrawCategorySelectors();
-				}
-				ImGui::EndChild();
-				ImGui::PopStyleColor();
+					ImGui::PushFont(YimMenu::Menu::Font::g_OptionsFont
+						? YimMenu::Menu::Font::g_OptionsFont
+						: YimMenu::Menu::Font::g_DefaultFont);
 
+					auto& categories = activeSubmenu->GetCategories();
+					auto activeCategory = activeSubmenu->GetActiveCategory();
+
+					for (size_t ci = 0; ci < categories.size(); ++ci)
+					{
+						auto& cat = categories[ci];
+						if (!cat) continue;
+						bool catActive = (cat == activeCategory);
+
+						if (catActive)
+							ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.80f, 0.55f, 1.0f, 1.0f));
+						else
+							ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.50f, 0.42f, 0.60f, 1.0f));
+
+						ImGui::PushID((int)ci);
+						if (ImGui::Selectable(cat->m_Name.c_str(), catActive, 0,
+							ImVec2(ImGui::CalcTextSize(cat->m_Name.c_str()).x + 16, 22)))
+						{
+							activeSubmenu->SetActiveCategory(cat);
+						}
+
+						// Underline active tab
+						if (catActive)
+						{
+							ImVec2 mn = ImGui::GetItemRectMin();
+							ImVec2 mx = ImGui::GetItemRectMax();
+							ImGui::GetWindowDrawList()->AddLine(
+								ImVec2(mn.x, mx.y),
+								ImVec2(mx.x, mx.y),
+								ImGui::GetColorU32(ImVec4(0.55f, 0.25f, 0.85f, 1.0f)),
+								2.0f);
+						}
+						ImGui::PopID();
+						ImGui::PopStyleColor();
+
+						if (ci + 1 < categories.size())
+							ImGui::SameLine();
+					}
+					ImGui::PopFont();
+				}
+
+				ImGui::Separator();
 				ImGui::Spacing();
 
 				// ── Options content ─────────────────────────────────
