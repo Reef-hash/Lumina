@@ -42,7 +42,8 @@ namespace YimMenu
 		float startCursorY = ImGui::GetCursorPosY();
 
 		ImFont* titleFont = Menu::Font::g_ChildTitleFont ? Menu::Font::g_ChildTitleFont : ImGui::GetFont();
-		float headerH = titleFont->FontSize + 10.0f;
+		ImGui::PushFont(titleFont);
+		float headerH = ImGui::GetFontSize() + 10.0f;
 
 		// Dark header background (top corners rounded)
 		dl->AddRectFilled(boxStart,
@@ -53,7 +54,6 @@ namespace YimMenu
 		// Title text inside header
 		ImGui::SetCursorPosY(startCursorY + 5.0f);
 		ImGui::Indent(8.0f);
-		ImGui::PushFont(titleFont);
 		ImGui::TextUnformatted(m_Name.c_str());
 		ImGui::PopFont();
 
