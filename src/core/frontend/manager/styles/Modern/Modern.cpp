@@ -208,19 +208,20 @@ namespace YimMenu
 		{
 			if (activeSubmenu)
 			{
-				// ── Submenu name ────────────────────────────────────
-				ImGui::PushFont(YimMenu::Menu::Font::g_DefaultFont);
-				ImGui::TextColored(ImVec4(0.55f, 0.40f, 0.80f, 1.0f), "%s", activeSubmenu->m_Name.c_str());
-				ImGui::PopFont();
-
-				// ── Category tabs (Cherax-style text tabs) ────────────
+				// ── Category tabs (Cherax-style solid tabs) ──────────
 				{
-					ImGui::PushFont(YimMenu::Menu::Font::g_OptionsFont
-						? YimMenu::Menu::Font::g_OptionsFont
-						: YimMenu::Menu::Font::g_DefaultFont);
+					ImFont* tabFont = YimMenu::Menu::Font::g_DefaultFont
+						? YimMenu::Menu::Font::g_DefaultFont
+						: ImGui::GetFont();
+					ImGui::PushFont(tabFont);
 
 					auto& categories = activeSubmenu->GetCategories();
 					auto activeCategory = activeSubmenu->GetActiveCategory();
+					ImDrawList* tdl = ImGui::GetWindowDrawList();
+
+					constexpr float TAB_H   = 26.0f;
+					constexpr float TAB_PAD = 12.0f;
+					constexpr float TAB_ROUND = 4.0f;
 
 					for (size_t ci = 0; ci < categories.size(); ++ci)
 					{
@@ -228,37 +229,48 @@ namespace YimMenu
 						if (!cat) continue;
 						bool catActive = (cat == activeCategory);
 
-						ImGui::PushStyleColor(ImGuiCol_Text,
-							catActive ? ImVec4(0.80f, 0.55f, 1.0f, 1.0f)
-							          : ImVec4(0.50f, 0.42f, 0.60f, 1.0f));
+						ImVec2 ts = ImGui::CalcTextSize(cat->m_Name.c_str());
+						float tabW = ts.x + TAB_PAD * 2;
+						ImVec2 tabPos = ImGui::GetCursorScreenPos();
 
-						ImGui::PushID((int)ci);
-						if (ImGui::Selectable(cat->m_Name.c_str(), catActive, 0,
-							ImVec2(ImGui::CalcTextSize(cat->m_Name.c_str()).x + 16, 22)))
-						{
-							activeSubmenu->SetActiveCategory(cat);
-						}
-
+						// Draw tab background
 						if (catActive)
 						{
-							ImVec2 mn = ImGui::GetItemRectMin();
-							ImVec2 mx = ImGui::GetItemRectMax();
-							ImGui::GetWindowDrawList()->AddLine(
-								ImVec2(mn.x, mx.y),
-								ImVec2(mx.x, mx.y),
-								ImGui::GetColorU32(ImVec4(0.55f, 0.25f, 0.85f, 1.0f)),
-								2.0f);
+							tdl->AddRectFilled(tabPos,
+								ImVec2(tabPos.x + tabW, tabPos.y + TAB_H),
+								ImGui::GetColorU32(ImVec4(0.12f, 0.10f, 0.18f, 1.0f)),
+								TAB_ROUND, ImDrawFlags_RoundCornersTop);
+						}
+
+						// Invisible button for click
+						ImGui::PushID((int)ci);
+						if (ImGui::InvisibleButton("##cat", ImVec2(tabW, TAB_H)))
+							activeSubmenu->SetActiveCategory(cat);
+
+						if (ImGui::IsItemHovered() && !catActive)
+						{
+							tdl->AddRectFilled(tabPos,
+								ImVec2(tabPos.x + tabW, tabPos.y + TAB_H),
+								ImGui::GetColorU32(ImVec4(0.10f, 0.08f, 0.15f, 0.5f)),
+								TAB_ROUND, ImDrawFlags_RoundCornersTop);
 						}
 						ImGui::PopID();
-						ImGui::PopStyleColor();
+
+						// Draw centered text over tab
+						ImU32 txtCol = catActive
+							? ImGui::GetColorU32(ImVec4(0.85f, 0.75f, 1.0f, 1.0f))
+							: ImGui::GetColorU32(ImVec4(0.50f, 0.42f, 0.60f, 1.0f));
+						tdl->AddText(tabFont, ImGui::GetFontSize(),
+							ImVec2(tabPos.x + (tabW - ts.x) * 0.5f,
+							       tabPos.y + (TAB_H - ts.y) * 0.5f),
+							txtCol, cat->m_Name.c_str());
 
 						if (ci + 1 < categories.size())
-							ImGui::SameLine();
+							ImGui::SameLine(0, 2.0f);
 					}
 					ImGui::PopFont();
 				}
 
-				ImGui::Separator();
 				ImGui::Spacing();
 
 				// ── Options content (two-column card layout) ────────

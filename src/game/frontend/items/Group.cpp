@@ -41,9 +41,9 @@ namespace YimMenu
 		ImVec2 boxStart = ImGui::GetCursorScreenPos();
 		float startCursorY = ImGui::GetCursorPosY();
 
-		ImFont* titleFont = Menu::Font::g_ChildTitleFont ? Menu::Font::g_ChildTitleFont : ImGui::GetFont();
+		ImFont* titleFont = Menu::Font::g_DefaultFont ? Menu::Font::g_DefaultFont : ImGui::GetFont();
 		ImGui::PushFont(titleFont);
-		float headerH = ImGui::GetFontSize() + 10.0f;
+		float headerH = ImGui::GetFontSize() + 12.0f;
 
 		// Dark header background (top corners rounded)
 		dl->AddRectFilled(boxStart,
@@ -51,10 +51,14 @@ namespace YimMenu
 			ImGui::GetColorU32(ImVec4(0.03f, 0.02f, 0.05f, 1.0f)),
 			4.0f, ImDrawFlags_RoundCornersTop);
 
-		// Title text inside header
-		ImGui::SetCursorPosY(startCursorY + 5.0f);
-		ImGui::Indent(8.0f);
-		ImGui::TextUnformatted(m_Name.c_str());
+		// Title text centered in header
+		ImVec2 titleSize = ImGui::CalcTextSize(m_Name.c_str());
+		float titleX = boxStart.x + (availW - titleSize.x) * 0.5f;
+		float titleY = boxStart.y + (headerH - titleSize.y) * 0.5f;
+		dl->AddText(titleFont, ImGui::GetFontSize(),
+			ImVec2(titleX, titleY),
+			ImGui::GetColorU32(ImVec4(0.85f, 0.78f, 0.95f, 1.0f)),
+			m_Name.c_str());
 		ImGui::PopFont();
 
 		// Position below header
@@ -77,7 +81,6 @@ namespace YimMenu
 			}
 		}
 		ImGui::EndGroup();
-		ImGui::Unindent(8.0f);
 
 		ImGui::Dummy(ImVec2(0, 6.0f));
 
