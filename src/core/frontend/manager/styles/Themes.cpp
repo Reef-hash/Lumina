@@ -47,8 +47,8 @@ namespace YimMenu
 		style.Colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4(0.616f, 0.306f, 0.867f, 1.00f);
 		style.Colors[ImGuiCol_ScrollbarGrabActive] = ImVec4(1.00f, 0.745f, 0.043f, 1.00f);
 
-		// Checkmarks, sliders - Yellow highlight with glow
-		style.Colors[ImGuiCol_CheckMark] = ImVec4(1.00f, 0.745f, 0.043f, 1.00f);
+		// Checkmarks, sliders - Purple filled checkbox like Cherax
+		style.Colors[ImGuiCol_CheckMark] = ImVec4(0.85f, 0.85f, 0.95f, 1.00f);
 		style.Colors[ImGuiCol_SliderGrab] = ImVec4(0.616f, 0.306f, 0.867f, 1.00f);
 		style.Colors[ImGuiCol_SliderGrabActive] = ImVec4(1.00f, 0.745f, 0.043f, 1.00f);
 
@@ -93,10 +93,10 @@ namespace YimMenu
 		style.GrabRounding = style.FrameRounding = style.ChildRounding = style.WindowRounding = 10.0f;
 		style.TabRounding = 10.0f;
 		
-		// Padding & spacing for modern look
-		style.FramePadding = ImVec2(8.0f, 6.0f);
-		style.ItemSpacing = ImVec2(12.0f, 8.0f);
-		style.ItemInnerSpacing = ImVec2(8.0f, 6.0f);
+		// Padding & spacing — compact like Cherax
+		style.FramePadding = ImVec2(6.0f, 4.0f);
+		style.ItemSpacing = ImVec2(10.0f, 5.0f);
+		style.ItemInnerSpacing = ImVec2(6.0f, 4.0f);
 		style.TouchExtraPadding = ImVec2(4.0f, 4.0f);
 	}
 

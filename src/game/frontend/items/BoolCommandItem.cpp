@@ -2,7 +2,6 @@
 #include "core/commands/Commands.hpp"
 #include "core/commands/Command.hpp"
 #include "core/commands/LoopedCommand.hpp"
-#include "core/frontend/widgets/toggle/imgui_toggle.hpp"
 
 namespace YimMenu
 {
@@ -21,7 +20,7 @@ namespace YimMenu
 		}
 
 		bool enabled = m_Command->GetState();
-		if (ImGui::Toggle(m_LabelOverride.has_value() ? m_LabelOverride.value().data() : m_Command->GetLabel().data(), &enabled))
+		if (ImGui::Checkbox(m_LabelOverride.has_value() ? m_LabelOverride.value().data() : m_Command->GetLabel().data(), &enabled))
 			m_Command->SetState(enabled);
 
 		// TODO: refactor this

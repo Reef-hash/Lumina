@@ -12,7 +12,7 @@ namespace YimMenu
 	// Cherax-style layout constants
 	static constexpr float SIDEBAR_W   = 60.0f;
 	static constexpr float CAT_BAR_H   = 42.0f;
-	static constexpr float WIN_ROUNDING = 0.0f;
+	static constexpr float WIN_ROUNDING = 8.0f;
 
 	// Animated gradient bar at top of window (like Cherax header bar)
 	static void DrawGradientBar(ImDrawList* dl, ImVec2 p, ImVec2 sz)
@@ -179,7 +179,7 @@ namespace YimMenu
 
 			// ── LUMINA Header Bar (edge-to-edge) ────────────────
 			{
-				float headerH = 38.0f;
+				float headerH = 48.0f;
 
 				// Dark header background
 				cdl->AddRectFilled(winP,
@@ -192,8 +192,10 @@ namespace YimMenu
 					ImVec2(winP.x + contentW, winP.y + headerH),
 					ImGui::GetColorU32(ImVec4(0.45f, 0.20f, 0.70f, 0.6f)));
 
-				// Centered "LUMINA" text
-				ImGui::PushFont(YimMenu::Menu::Font::g_ChatFont);
+				// Centered "LUMINA" text — use largest available font
+				ImGui::PushFont(YimMenu::Menu::Font::g_HeaderFont
+					? YimMenu::Menu::Font::g_HeaderFont
+					: YimMenu::Menu::Font::g_OverlayFont);
 				ImVec2 ts = ImGui::CalcTextSize("LUMINA");
 				ImGui::SetCursorScreenPos(ImVec2(
 					winP.x + (contentW - ts.x) * 0.5f,
