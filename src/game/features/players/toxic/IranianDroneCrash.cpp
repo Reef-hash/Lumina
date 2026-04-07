@@ -1,6 +1,7 @@
 #include "game/commands/PlayerCommand.hpp"
 #include "game/gta/Object.hpp"
 #include "game/gta/Natives.hpp"
+#include "game/pointers/Pointers.hpp"
 #include "core/backend/ScriptMgr.hpp"
 #include "core/frontend/Notifications.hpp"
 
@@ -22,6 +23,9 @@ namespace YimMenu::Features
 			auto pos = ped.GetPosition();
 			int spawned = 0;
 
+			if (Pointers.ModelSpawnBypass)
+				Pointers.ModelSpawnBypass->Apply();
+
 			for (int i = 0; i < NUM_OBJECTS; i++)
 			{
 				float offsetX = (float)(i % 5) * 0.5f;
@@ -37,6 +41,9 @@ namespace YimMenu::Features
 				}
 				ScriptMgr::Yield();
 			}
+
+			if (Pointers.ModelSpawnBypass)
+				Pointers.ModelSpawnBypass->Restore();
 
 			if (spawned > 0)
 				Notifications::Show("Iranian Drone Crash", std::format("Sent {} crash objects to {}", spawned, player.GetName()), NotificationType::Success);
