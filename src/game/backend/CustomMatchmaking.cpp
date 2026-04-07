@@ -9,6 +9,7 @@
 #include "core/hooking/DetourHook.hpp"
 #include "core/backend/FiberPool.hpp"
 #include "core/backend/ScriptMgr.hpp"
+#include "core/frontend/Notifications.hpp"
 
 namespace YimMenu::Features
 {
@@ -127,13 +128,18 @@ namespace YimMenu
 
 		status->m_Status = 1; // set task in progress
 
+		int target_count = Features::_MultiplexCount.GetState();
+		Notifications::Show("Multiplex", std::format("Starting multiplex ({} sessions)...", target_count), NotificationType::Info, 3000);
+
 		auto num_slots_copy = num_slots;
 		auto available_slots_copy = available_slots;
-		FiberPool::Push([this, num_slots_copy, available_slots_copy, info, attrs, id, status] {
+		FiberPool::Push([this, num_slots_copy, available_slots_copy, info, attrs, id, status, target_count] {
+			// Step 1: Create the main session
 			rage::rlTaskStatus first_advert_status;
 			if (!BaseHook::Get<Hooks::Matchmaking::MatchmakingAdvertise, DetourHook<decltype(&Hooks::Matchmaking::MatchmakingAdvertise)>>()->Original()(0, num_slots_copy, available_slots_copy, attrs, -1, info, id, &first_advert_status))
 			{
 				LOGF(WARNING, "OnAdvertiseImpl(): MatchmakingAdvertise returned false for the initial advertisement");
+				Notifications::Show("Multiplex", "Failed to create main session", NotificationType::Error, 4000);
 				status->m_Status = 2;
 				return;
 			}
@@ -143,43 +149,56 @@ namespace YimMenu
 
 			if (first_advert_status.m_Status == 2)
 			{
-				LOGF(WARNING, "OnAdvertiseImpl(): MatchmakingAdvertise failed for the initial advertisement with code {}", status->m_ErrorCode);
+				LOGF(WARNING, "OnAdvertiseImpl(): MatchmakingAdvertise failed for the initial advertisement with code {}", first_advert_status.m_ErrorCode);
+				Notifications::Show("Multiplex", "Main session advertisement failed", NotificationType::Error, 4000);
 				status->m_Status = 2;
 				return;
 			}
 
+			Notifications::Show("Multiplex", "Main session created (1/" + std::to_string(target_count) + ")", NotificationType::Info, 2000);
+
 			auto id_hash = GetIdHash(id);
-
 			m_MultiplexedSessions.emplace(id_hash, std::vector<MatchmakingId>{});
-			
-			// create the multiplexed sessions
-			for (int i = 0; i < Features::_MultiplexCount.GetState() - 1; i++)
+
+			// Step 2: Create additional sessions one by one, wait for each
+			int success_count = 1; // main session counts as 1
+			int additional = target_count - 1;
+
+			for (int i = 0; i < additional; i++)
 			{
-				FiberPool::Push([this, num_slots_copy, available_slots_copy, info, attrs, status, id_hash, i] {
-					rage::rlTaskStatus additional_advert_status;
-					MatchmakingId additional_id;
+				rage::rlTaskStatus additional_status;
+				MatchmakingId additional_id;
 
-					if (!BaseHook::Get<Hooks::Matchmaking::MatchmakingAdvertise, DetourHook<decltype(&Hooks::Matchmaking::MatchmakingAdvertise)>>()->Original()(0, num_slots_copy, available_slots_copy, attrs, -1, info, &additional_id, &additional_advert_status))
-					{
-						LOGF(WARNING, "OnAdvertiseImpl(): MatchmakingAdvertise returned false for additional advertisement {}", i);
-						return;
-					}
+				if (!BaseHook::Get<Hooks::Matchmaking::MatchmakingAdvertise, DetourHook<decltype(&Hooks::Matchmaking::MatchmakingAdvertise)>>()->Original()(0, num_slots_copy, available_slots_copy, attrs, -1, info, &additional_id, &additional_status))
+				{
+					LOGF(WARNING, "OnAdvertiseImpl(): MatchmakingAdvertise returned false for additional advertisement {}", i);
+					Notifications::Show("Multiplex", std::format("Session {}/{} failed to start", i + 2, target_count), NotificationType::Warning, 3000);
+					continue;
+				}
 
-					while (additional_advert_status.m_Status == 1)
-						ScriptMgr::Yield();
+				while (additional_status.m_Status == 1)
+					ScriptMgr::Yield();
 
-					if (additional_advert_status.m_Status == 2)
-					{
-						LOGF(WARNING, "OnAdvertiseImpl(): MatchmakingAdvertise failed for the additional advertisement {} with code {}", i, status->m_ErrorCode);
-						return;
-					}
+				if (additional_status.m_Status == 2)
+				{
+					LOGF(WARNING, "OnAdvertiseImpl(): MatchmakingAdvertise failed for additional advertisement {} with code {}", i, additional_status.m_ErrorCode);
+					Notifications::Show("Multiplex", std::format("Session {}/{} advertisement failed", i + 2, target_count), NotificationType::Warning, 3000);
+					continue;
+				}
 
-					if (auto it = m_MultiplexedSessions.find(id_hash); it != m_MultiplexedSessions.end())
-						it->second.push_back(additional_id);
-				});
+				if (auto it = m_MultiplexedSessions.find(id_hash); it != m_MultiplexedSessions.end())
+					it->second.push_back(additional_id);
+
+				success_count++;
+				LOGF(INFO, "OnAdvertiseImpl(): Additional session {}/{} created successfully", success_count, target_count);
 			}
 
 			status->m_Status = 3; // signal success to game
+
+			if (success_count == target_count)
+				Notifications::Show("Multiplex", std::format("All {} sessions active!", target_count), NotificationType::Success, 5000);
+			else
+				Notifications::Show("Multiplex", std::format("{}/{} sessions active", success_count, target_count), NotificationType::Warning, 5000);
 		});
 
 		return false; // we're handling the request now
@@ -212,15 +231,18 @@ namespace YimMenu
 		// 1) destroying host session
 		if (auto it = m_MultiplexedSessions.find(hash); it != m_MultiplexedSessions.end())
 		{
+			int count = (int)it->second.size();
 			for (auto& session : it->second)
 			{
 				FiberPool::Push([session]() {
-					auto session_copy = session; // the compiler doesn't like it if I use session directly
+					auto session_copy = session;
 					BaseHook::Get<Hooks::Matchmaking::MatchmakingUnadvertise, DetourHook<decltype(&Hooks::Matchmaking::MatchmakingUnadvertise)>>()->Original()(0, &session_copy, nullptr);
 				});
 			}
 
-			return true; // we've destroyed the multiplexed sessions, let the game destroy the main session
+			m_MultiplexedSessions.erase(it);
+			Notifications::Show("Multiplex", std::format("Stopped {} multiplexed sessions", count), NotificationType::Info, 3000);
+			return true; // let the game destroy the main session
 		}
 
 		// or 2) game tries to unadvertise multiplexed sessions every few seconds
