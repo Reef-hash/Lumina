@@ -19,7 +19,7 @@ namespace YimMenu
 	class Button : public UIItem
 	{
 	public:
-		explicit Button(const std::string_view& Name, std::function<void()> OnClick, ImVec2 size = {0, 25}, const std::string_view& information = "Empty");
+		explicit Button(const std::string_view& Name, std::function<void()> OnClick, ImVec2 size = {0, 0}, const std::string_view& information = "Empty");
 		void Draw() override;
 
 	private:

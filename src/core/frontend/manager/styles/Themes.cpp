@@ -90,7 +90,8 @@ namespace YimMenu
 		style.Colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.10f, 0.05f, 0.15f, 0.50f);
 
 		// Rounding - Smooth and modern
-		style.GrabRounding = style.FrameRounding = style.ChildRounding = style.WindowRounding = 10.0f;
+		style.GrabRounding = style.FrameRounding = 4.0f;
+		style.ChildRounding = style.WindowRounding = 10.0f;
 		style.TabRounding = 10.0f;
 		
 		// Padding & spacing — compact like Cherax
