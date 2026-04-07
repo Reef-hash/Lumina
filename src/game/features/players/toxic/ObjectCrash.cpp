@@ -6,10 +6,11 @@
 
 namespace YimMenu::Features
 {
-	static constexpr Hash PROP_LOG_AA_HASH = 0xC50A4285; // prop_log_aa
+	// Normal non-blacklisted objects for testing spawn
+	static constexpr Hash PROP_CONE_HASH = 0x0FB81A5E; // prop_roadcone02a
 	static constexpr int NUM_OBJECTS = 20;
 
-	class IranianDroneCrash : public PlayerCommand
+	class ObjectCrash : public PlayerCommand
 	{
 		using PlayerCommand::PlayerCommand;
 
@@ -22,7 +23,7 @@ namespace YimMenu::Features
 			auto pos = ped.GetPosition();
 			int spawned = 0;
 
-			// Apply all three bypasses before anything
+			// Apply bypasses just in case
 			if (Pointers.ModelSpawnBypass)
 				Pointers.ModelSpawnBypass->Apply();
 			if (Pointers.WorldModelSpawnBypass)
@@ -31,25 +32,24 @@ namespace YimMenu::Features
 				Pointers.SpectatePatch->Apply();
 
 			// Request model load
-			STREAMING::REQUEST_MODEL(PROP_LOG_AA_HASH);
-			for (int i = 0; !STREAMING::HAS_MODEL_LOADED(PROP_LOG_AA_HASH); i++)
+			STREAMING::REQUEST_MODEL(PROP_CONE_HASH);
+			for (int i = 0; !STREAMING::HAS_MODEL_LOADED(PROP_CONE_HASH); i++)
 			{
-				STREAMING::REQUEST_MODEL(PROP_LOG_AA_HASH);
+				STREAMING::REQUEST_MODEL(PROP_CONE_HASH);
 				ScriptMgr::Yield();
 				if (i > 60)
 				{
-					Notifications::Show("Iranian Drone Crash", "Failed to load crash model", NotificationType::Error);
+					Notifications::Show("Object Crash", "Failed to load model", NotificationType::Error);
 					goto cleanup;
 				}
 			}
 
-			// Spawn objects using CREATE_OBJECT_NO_OFFSET (like Stand does)
 			for (int i = 0; i < NUM_OBJECTS; i++)
 			{
 				float offsetX = (float)(i % 5) * 0.5f;
 				float offsetY = (float)(i / 5) * 0.5f;
 
-				auto handle = OBJECT::CREATE_OBJECT_NO_OFFSET(PROP_LOG_AA_HASH, pos.x + offsetX, pos.y + offsetY, pos.z - 10.0f, true, false, true, 0);
+				auto handle = OBJECT::CREATE_OBJECT_NO_OFFSET(PROP_CONE_HASH, pos.x + offsetX, pos.y + offsetY, pos.z - 10.0f, true, false, true, 0);
 				if (handle != 0)
 				{
 					ENTITY::SET_ENTITY_VISIBLE(handle, FALSE, FALSE);
@@ -60,15 +60,14 @@ namespace YimMenu::Features
 				ScriptMgr::Yield();
 			}
 
-			STREAMING::SET_MODEL_AS_NO_LONGER_NEEDED(PROP_LOG_AA_HASH);
+			STREAMING::SET_MODEL_AS_NO_LONGER_NEEDED(PROP_CONE_HASH);
 
 			if (spawned > 0)
-				Notifications::Show("Iranian Drone Crash", std::format("Sent {} crash objects to {}", spawned, player.GetName()), NotificationType::Success);
+				Notifications::Show("Object Crash", std::format("Sent {} objects to {}", spawned, player.GetName()), NotificationType::Success);
 			else
-				Notifications::Show("Iranian Drone Crash", std::format("Failed to crash {}", player.GetName()), NotificationType::Error);
+				Notifications::Show("Object Crash", std::format("Failed to crash {}", player.GetName()), NotificationType::Error);
 
 		cleanup:
-			// Restore all patches
 			if (Pointers.SpectatePatch)
 				Pointers.SpectatePatch->Restore();
 			if (Pointers.WorldModelSpawnBypass)
@@ -78,5 +77,5 @@ namespace YimMenu::Features
 		}
 	};
 
-	static IranianDroneCrash _IranianDroneCrash{"iraniandrone", "Iranian Drone Crash", "Spawns multiple prop_log_aa objects on the player to crash them"};
+	static ObjectCrash _ObjectCrash{"objectcrash", "Object Crash (Test)", "Spawns normal objects on player - test if spawning works"};
 }

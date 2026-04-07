@@ -14,8 +14,7 @@ namespace YimMenu::Submenus
 
 		auto crash = std::make_shared<Group>("Crash");
 		crash->AddItem(std::make_shared<PlayerCommandItem>("iraniandrone"_J));
-
-		auto other = std::make_shared<Group>("Other");
+	crash->AddItem(std::make_shared<PlayerCommandItem>("objectcrash"_J));
 		other->AddItem(std::make_shared<PlayerCommandItem>("blackscreen"_J));
 
 		menu->AddItem(kicks);
