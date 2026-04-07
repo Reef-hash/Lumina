@@ -182,11 +182,23 @@ namespace YimMenu
 		constexpr auto modelSpawnBypassPtrn = Pattern<"E8 ? ? ? ? 48 8B 78 48">("ModelSpawnBypass");
 		scanner.Add(modelSpawnBypassPtrn, [this](PointerCalculator ptr) {
 			ModelSpawnBypass = BytePatches::Add(ptr.Add(1).Rip().Add(0x2B).As<std::uint8_t*>(), 0xEB);
+			LOG(INFO) << "ModelSpawnBypass patch address: " << HEX(ptr.Add(1).Rip().Add(0x2B).As<uintptr_t>());
 		});
 
 		constexpr auto worldModelSpawnBypassPtrn = Pattern<"4C 8B 2C 01 4D 85 ED 0F 84 ? ? ? ?">("WorldModelSpawnBypass");
 		scanner.Add(worldModelSpawnBypassPtrn, [this](PointerCalculator ptr) {
 			WorldModelSpawnBypass = BytePatches::Add(ptr.Add(4).As<void*>(), std::to_array<std::uint8_t>({0xEB, 0x12, 0x90}));
+			LOG(INFO) << "WorldModelSpawnBypass patch address: " << HEX(ptr.Add(4).As<uintptr_t>());
+		});
+
+		constexpr auto pseudoObjectCheckPtrn = Pattern<"48 85 C0 0F 84 ? ? ? ? 8B 48 50">("PseudoObjectCheck");
+		scanner.Add(pseudoObjectCheckPtrn, [this](PointerCalculator ptr) {
+			PseudoObjectCheck = BytePatches::Add(ptr.As<void*>(), std::to_array<std::uint8_t>({
+				0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90,
+				0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90,
+				0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90
+			}));
+			LOG(INFO) << "PseudoObjectCheck patch address: " << HEX(ptr.As<uintptr_t>());
 		});
 
 		constexpr auto receiveNetMessagePtrn = Pattern<"48 81 C1 00 03 00 00 4C 89 E2">("ReceiveNetMessage");

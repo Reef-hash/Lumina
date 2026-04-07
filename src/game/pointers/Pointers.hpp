@@ -110,6 +110,7 @@ namespace YimMenu
 		BytePatch ModelSpawnBypass;
 		BytePatch SpectatePatch; // used to patch the code that prevents you from spawning network objects when spectating
 		BytePatch WorldModelSpawnBypass;
+		BytePatch PseudoObjectCheck; // NOP pseudo-object validation check (required for object spawning)
 		PVOID ReceiveNetMessage;
 		rage::netEventMgr** NetEventMgr;
 		Functions::EventAck EventAck;

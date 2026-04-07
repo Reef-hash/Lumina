@@ -22,15 +22,42 @@ namespace YimMenu::Features
 			auto pos = ped.GetPosition();
 			int spawned = 0;
 
-			// Apply all three bypasses before anything
+			// Apply all bypass patches
+			LOG(INFO) << "IranianDroneCrash: Applying bypass patches...";
 			if (Pointers.ModelSpawnBypass)
+			{
 				Pointers.ModelSpawnBypass->Apply();
+				LOG(INFO) << "  ModelSpawnBypass: APPLIED";
+			}
+			else
+				LOG(WARNING) << "  ModelSpawnBypass: NOT FOUND (pattern failed)";
+
 			if (Pointers.WorldModelSpawnBypass)
+			{
 				Pointers.WorldModelSpawnBypass->Apply();
+				LOG(INFO) << "  WorldModelSpawnBypass: APPLIED";
+			}
+			else
+				LOG(WARNING) << "  WorldModelSpawnBypass: NOT FOUND (pattern failed)";
+
+			if (Pointers.PseudoObjectCheck)
+			{
+				Pointers.PseudoObjectCheck->Apply();
+				LOG(INFO) << "  PseudoObjectCheck: APPLIED";
+			}
+			else
+				LOG(WARNING) << "  PseudoObjectCheck: NOT FOUND (pattern failed)";
+
 			if (Pointers.SpectatePatch)
+			{
 				Pointers.SpectatePatch->Apply();
+				LOG(INFO) << "  SpectatePatch: APPLIED";
+			}
+			else
+				LOG(WARNING) << "  SpectatePatch: NOT FOUND (pattern failed)";
 
 			// Request model load
+			LOG(INFO) << "IranianDroneCrash: Requesting model 0x" << std::hex << PROP_LOG_AA_HASH;
 			STREAMING::REQUEST_MODEL(PROP_LOG_AA_HASH);
 			for (int i = 0; !STREAMING::HAS_MODEL_LOADED(PROP_LOG_AA_HASH); i++)
 			{
@@ -38,10 +65,12 @@ namespace YimMenu::Features
 				ScriptMgr::Yield();
 				if (i > 60)
 				{
+					LOG(WARNING) << "IranianDroneCrash: Model load TIMED OUT after 60 frames";
 					Notifications::Show("Iranian Drone Crash", "Failed to load crash model", NotificationType::Error);
 					goto cleanup;
 				}
 			}
+			LOG(INFO) << "IranianDroneCrash: Model loaded successfully";
 
 			// Spawn objects using CREATE_OBJECT_NO_OFFSET (like Stand does)
 			for (int i = 0; i < NUM_OBJECTS; i++)
@@ -57,8 +86,14 @@ namespace YimMenu::Features
 					ENTITY::APPLY_FORCE_TO_ENTITY(handle, 1, 0.0f, 0.0f, 500.0f, 0.0f, 0.0f, 0.0f, 0, TRUE, TRUE, TRUE, FALSE, TRUE);
 					spawned++;
 				}
+				else
+				{
+					LOG(WARNING) << "IranianDroneCrash: CREATE_OBJECT_NO_OFFSET returned 0 for object " << i;
+				}
 				ScriptMgr::Yield();
 			}
+
+			LOG(INFO) << "IranianDroneCrash: Spawned " << spawned << "/" << NUM_OBJECTS << " objects";
 
 			STREAMING::SET_MODEL_AS_NO_LONGER_NEEDED(PROP_LOG_AA_HASH);
 
@@ -71,10 +106,13 @@ namespace YimMenu::Features
 			// Restore all patches
 			if (Pointers.SpectatePatch)
 				Pointers.SpectatePatch->Restore();
+			if (Pointers.PseudoObjectCheck)
+				Pointers.PseudoObjectCheck->Restore();
 			if (Pointers.WorldModelSpawnBypass)
 				Pointers.WorldModelSpawnBypass->Restore();
 			if (Pointers.ModelSpawnBypass)
 				Pointers.ModelSpawnBypass->Restore();
+			LOG(INFO) << "IranianDroneCrash: All patches restored";
 		}
 	};
 

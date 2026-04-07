@@ -13,6 +13,8 @@ namespace YimMenu::Features
 				Pointers.ModelSpawnBypass->Apply();
 			if (Pointers.WorldModelSpawnBypass)
 				Pointers.WorldModelSpawnBypass->Apply();
+			if (Pointers.PseudoObjectCheck)
+				Pointers.PseudoObjectCheck->Apply();
 		}
 
 		virtual void OnDisable() override
@@ -21,6 +23,8 @@ namespace YimMenu::Features
 				Pointers.ModelSpawnBypass->Restore();
 			if (Pointers.WorldModelSpawnBypass)
 				Pointers.WorldModelSpawnBypass->Restore();
+			if (Pointers.PseudoObjectCheck)
+				Pointers.PseudoObjectCheck->Restore();
 		}
 	};
 
