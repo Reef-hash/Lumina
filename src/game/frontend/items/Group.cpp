@@ -35,36 +35,38 @@ namespace YimMenu
 			return;
 		}
 
-		// Cherax-style boxed group with dark header
-		ImDrawList* dl = ImGui::GetWindowDrawList();
-		float availW = ImGui::GetContentRegionAvail().x;
-		ImVec2 boxStart = ImGui::GetCursorScreenPos();
-		float startCursorY = ImGui::GetCursorPosY();
+		// BeginChild with rounded border + MenuBar for title
+		ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);
+		ImGui::PushStyleVar(ImGuiStyleVar_ChildBorderSize, 1.0f);
+		ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.25f, 0.15f, 0.40f, 0.5f));
+		ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.06f, 0.05f, 0.09f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_MenuBarBg, ImVec4(0.03f, 0.02f, 0.05f, 1.0f));
 
-		ImFont* titleFont = Menu::Font::g_DefaultFont ? Menu::Font::g_DefaultFont : ImGui::GetFont();
-		ImGui::PushFont(titleFont);
-		float headerH = ImGui::GetFontSize() + 12.0f;
+		ImGuiWindowFlags childFlags = ImGuiWindowFlags_MenuBar;
 
-		// Dark header background (top corners rounded)
-		dl->AddRectFilled(boxStart,
-			ImVec2(boxStart.x + availW, boxStart.y + headerH),
-			ImGui::GetColorU32(ImVec4(0.03f, 0.02f, 0.05f, 1.0f)),
-			4.0f, ImDrawFlags_RoundCornersTop);
+		// Use a unique ID per group name
+		std::string childId = "##grp_" + m_Name;
+		ImGui::BeginChild(childId.c_str(), ImVec2(0, 0), ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY, childFlags);
 
-		// Title text centered in header
-		ImVec2 titleSize = ImGui::CalcTextSize(m_Name.c_str());
-		float titleX = boxStart.x + (availW - titleSize.x) * 0.5f;
-		float titleY = boxStart.y + (headerH - titleSize.y) * 0.5f;
-		dl->AddText(titleFont, ImGui::GetFontSize(),
-			ImVec2(titleX, titleY),
-			ImGui::GetColorU32(ImVec4(0.85f, 0.78f, 0.95f, 1.0f)),
-			m_Name.c_str());
-		ImGui::PopFont();
+		// MenuBar as group header
+		if (ImGui::BeginMenuBar())
+		{
+			ImFont* titleFont = Menu::Font::g_DefaultFont ? Menu::Font::g_DefaultFont : ImGui::GetFont();
+			ImGui::PushFont(titleFont);
 
-		// Position below header
-		ImGui::SetCursorPosY(startCursorY + headerH + 6.0f);
+			// Center the title in the menu bar
+			float barW = ImGui::GetContentRegionAvail().x;
+			ImVec2 titleSize = ImGui::CalcTextSize(m_Name.c_str());
+			float offset = (barW - titleSize.x) * 0.5f;
+			if (offset > 0)
+				ImGui::SetCursorPosX(ImGui::GetCursorPosX() + offset);
 
-		// Draw items
+			ImGui::TextColored(ImVec4(0.85f, 0.78f, 0.95f, 1.0f), "%s", m_Name.c_str());
+			ImGui::PopFont();
+			ImGui::EndMenuBar();
+		}
+
+		// Draw items inside
 		int item_count = 0;
 		ImGui::BeginGroup();
 		for (auto& item : m_Items)
@@ -82,15 +84,10 @@ namespace YimMenu
 		}
 		ImGui::EndGroup();
 
-		ImGui::Dummy(ImVec2(0, 6.0f));
+		ImGui::EndChild();
+		ImGui::PopStyleColor(3);
+		ImGui::PopStyleVar(2);
 
-		// Border around full box
-		ImVec2 boxEnd(boxStart.x + availW, ImGui::GetCursorScreenPos().y);
-		dl->AddRect(boxStart, boxEnd,
-			ImGui::GetColorU32(ImVec4(0.25f, 0.15f, 0.40f, 0.5f)),
-			4.0f, 0, 1.0f);
-
-		ImGui::Spacing();
 		ImGui::Spacing();
 	}
 }
