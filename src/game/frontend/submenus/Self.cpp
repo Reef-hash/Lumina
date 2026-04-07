@@ -65,11 +65,15 @@ namespace YimMenu::Submenus
 		specialInMp->AddItem(std::make_shared<ConditionalItem>("mpspecialability"_J, std::make_shared<ListCommandItem>("selspecialability"_J, "##specialselect")));
 		specialAbilityGroup->AddItem(std::move(specialInMp));
 
+		auto protectionGroup = std::make_shared<Group>("Protection");
+		protectionGroup->AddItem(std::make_shared<BoolCommandItem>("blockcrashobjects"_J));
+
 		main->AddItem(globalsGroup);
 		main->AddItem(toolsGroup);
 		main->AddItem(specialAbilityGroup);
 		main->AddItem(wantedGroup);
 		main->AddItem(movementGroup);
+		main->AddItem(protectionGroup);
 		AddCategory(std::move(main));
 
 		AddCategory(BuildWeaponsMenu());
