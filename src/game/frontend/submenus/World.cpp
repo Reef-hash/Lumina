@@ -40,6 +40,9 @@ namespace YimMenu::Submenus
 		timeGroup->AddItem(std::make_shared<CommandItem>("setnetworktime"_J, "Set"));
 		timeGroup->AddItem(std::make_shared<BoolCommandItem>("freezenetworktime"_J, "Freeze"));
 
+		auto spawnBypass = std::make_shared<Group>("Spawn Bypass", 1);
+		spawnBypass->AddItem(std::make_shared<BoolCommandItem>("blacklistbypass"_J));
+
 		auto otherOpts = std::make_shared<Group>("Other", 1);
 		otherOpts->AddItem(std::make_shared<BoolCommandItem>("pedsignore"_J));
 		otherOpts->AddItem(std::make_shared<BoolCommandItem>("PedRiotMode"_J));
@@ -51,6 +54,7 @@ namespace YimMenu::Submenus
 		main->AddItem(std::move(deleteOpts));
 		main->AddItem(std::move(bringOpts));
 		main->AddItem(std::move(weatherOpts));
+		main->AddItem(std::move(spawnBypass));
 		main->AddItem(std::move(otherOpts));
 		main->AddItem(timeGroup);
 
