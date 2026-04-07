@@ -8,6 +8,7 @@ namespace YimMenu
 	std::shared_ptr<Category> DrawGUISettingsMenu();
 	void InitializeColorCommands();
 	void SyncColorCommandsToStyle();
+	void SyncRoundingToStyle();
 	void LoadSettings();
 	void SaveSettings();
 	void ApplyThemeToImGui();

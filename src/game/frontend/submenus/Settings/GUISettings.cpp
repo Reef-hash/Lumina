@@ -51,7 +51,7 @@ namespace YimMenu
 			style.Colors[i] = g_ColorCommands[i]->GetState();
 	}
 
-	static void SyncRoundingToStyle()
+	void SyncRoundingToStyle()
 	{
 		auto& s = ImGui::GetStyle();
 		for (auto& [k, v] : g_RoundingValues)
@@ -71,7 +71,7 @@ namespace YimMenu
 				s.TabRounding = v;
 	}
 
-	static void LoadSettings()
+	void LoadSettings()
 	{
 		if (!std::filesystem::exists(kSettingsFile))
 			return;
@@ -99,7 +99,7 @@ namespace YimMenu
 		}
 	}
 
-	static void SaveSettings()
+	void SaveSettings()
 	{
 		nlohmann::json json;
 
@@ -311,42 +311,89 @@ namespace YimMenu
 		InitializeColorCommands();
 		auto imGuiCustomStyle = std::make_shared<Category>("Customize");
 		imGuiCustomStyle->AddItem(std::make_unique<ImGuiItem>([] {
-			ImGui::Text("ImGui Style Editor");
-			ImGui::Separator();
-			if (ImGui::BeginTabBar("StyleTabs"))
+			// ── Save / Load / Reset buttons ──────────────────
+			ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);
+			ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.06f, 0.05f, 0.09f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.25f, 0.15f, 0.40f, 0.5f));
+			ImGui::BeginChild("##config_actions", ImVec2(0, 0), ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY);
 			{
-				if (ImGui::BeginTabItem("Colors"))
+				if (ImGui::Button("Save Config"))
+					SaveSettings();
+				ImGui::SameLine();
+				if (ImGui::Button("Load Config"))
 				{
-					DrawColorsTab();
-					ImGui::EndTabItem();
+					LoadSettings();
+					SyncColorCommandsToStyle();
+					SyncRoundingToStyle();
 				}
-				if (ImGui::BeginTabItem("Rounding"))
+				ImGui::SameLine();
+				if (ImGui::Button("Reset to Default"))
 				{
-					DrawRoundingTab();
-					ImGui::EndTabItem();
+					DefaultStyle();
+					// Re-sync commands from the fresh default style
+					auto& style = ImGui::GetStyle();
+					for (int i = 0; i < ImGuiCol_COUNT; ++i)
+						g_ColorCommands[i]->SetState(style.Colors[i]);
+					g_RoundingValues["WindowRounding"]    = style.WindowRounding;
+					g_RoundingValues["FrameRounding"]     = style.FrameRounding;
+					g_RoundingValues["GrabRounding"]      = style.GrabRounding;
+					g_RoundingValues["ScrollbarRounding"] = style.ScrollbarRounding;
+					g_RoundingValues["ChildRounding"]     = style.ChildRounding;
+					g_RoundingValues["PopupRounding"]     = style.PopupRounding;
+					g_RoundingValues["TabRounding"]       = style.TabRounding;
+					SaveSettings();
 				}
-				if (ImGui::BeginTabItem("Layout"))
-				{
-					DrawLayoutTab();
-					ImGui::EndTabItem();
-				}
-				if (ImGui::BeginTabItem("Border"))
-				{
-					DrawBorderTab();
-					ImGui::EndTabItem();
-				}
-				if (ImGui::BeginTabItem("Global"))
-				{
-					DrawGlobalTab();
-					ImGui::EndTabItem();
-				}
-				if (ImGui::BeginTabItem("Fonts"))
-				{
-					DrawFontTab();
-					ImGui::EndTabItem();
-				}
-				ImGui::EndTabBar();
 			}
+			ImGui::EndChild();
+			ImGui::PopStyleColor(2);
+			ImGui::PopStyleVar();
+
+			ImGui::Spacing();
+
+			// ── Style tabs inside a scrollable child ─────────
+			ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);
+			ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.06f, 0.05f, 0.09f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.25f, 0.15f, 0.40f, 0.5f));
+			ImGui::BeginChild("##style_editor", ImVec2(0, 0), ImGuiChildFlags_Borders);
+			{
+				if (ImGui::BeginTabBar("StyleTabs"))
+				{
+					if (ImGui::BeginTabItem("Colors"))
+					{
+						DrawColorsTab();
+						ImGui::EndTabItem();
+					}
+					if (ImGui::BeginTabItem("Rounding"))
+					{
+						DrawRoundingTab();
+						ImGui::EndTabItem();
+					}
+					if (ImGui::BeginTabItem("Layout"))
+					{
+						DrawLayoutTab();
+						ImGui::EndTabItem();
+					}
+					if (ImGui::BeginTabItem("Border"))
+					{
+						DrawBorderTab();
+						ImGui::EndTabItem();
+					}
+					if (ImGui::BeginTabItem("Global"))
+					{
+						DrawGlobalTab();
+						ImGui::EndTabItem();
+					}
+					if (ImGui::BeginTabItem("Fonts"))
+					{
+						DrawFontTab();
+						ImGui::EndTabItem();
+					}
+					ImGui::EndTabBar();
+				}
+			}
+			ImGui::EndChild();
+			ImGui::PopStyleColor(2);
+			ImGui::PopStyleVar();
 		}));
 		return imGuiCustomStyle;
 	}
