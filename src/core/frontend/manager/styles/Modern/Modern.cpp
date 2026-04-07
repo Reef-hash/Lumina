@@ -273,26 +273,14 @@ namespace YimMenu
 
 				ImGui::Spacing();
 
-				// ── Options content (two-column card layout) ────────
+				// ── Options content ─────────────────────────────────
 				if (ImGui::BeginChild("##options", ImVec2(0, 0), false))
 				{
 					auto optFont = YimMenu::UIManager::GetOptionsFont();
 					if (optFont)
 						ImGui::PushFont(optFont);
 
-					auto activeCat = activeSubmenu->GetActiveCategory();
-					if (activeCat)
-					{
-						auto& items = activeCat->GetItems();
-						ImGui::Columns(2, "##grp_cols", false);
-						for (size_t i = 0; i < items.size(); ++i)
-						{
-							if (items[i] && items[i]->CanDraw())
-								items[i]->Draw();
-							ImGui::NextColumn();
-						}
-						ImGui::Columns(1);
-					}
+					activeSubmenu->Draw();
 
 					if (optFont)
 						ImGui::PopFont();
