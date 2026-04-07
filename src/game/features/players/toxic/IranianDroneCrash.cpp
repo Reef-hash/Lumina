@@ -1,5 +1,4 @@
 #include "game/commands/PlayerCommand.hpp"
-#include "game/gta/Object.hpp"
 #include "game/gta/Natives.hpp"
 #include "game/pointers/Pointers.hpp"
 #include "core/backend/ScriptMgr.hpp"
@@ -7,7 +6,7 @@
 
 namespace YimMenu::Features
 {
-	static constexpr uint32_t PROP_LOG_AA_HASH = 3305783941u;
+	static constexpr Hash PROP_LOG_AA_HASH = 0xC50A4285;
 	static constexpr int NUM_OBJECTS = 20;
 
 	class IranianDroneCrash : public PlayerCommand
@@ -23,32 +22,59 @@ namespace YimMenu::Features
 			auto pos = ped.GetPosition();
 			int spawned = 0;
 
+			// Apply all three bypasses before anything
 			if (Pointers.ModelSpawnBypass)
 				Pointers.ModelSpawnBypass->Apply();
+			if (Pointers.WorldModelSpawnBypass)
+				Pointers.WorldModelSpawnBypass->Apply();
+			if (Pointers.SpectatePatch)
+				Pointers.SpectatePatch->Apply();
 
+			// Request model load
+			STREAMING::REQUEST_MODEL(PROP_LOG_AA_HASH);
+			for (int i = 0; !STREAMING::HAS_MODEL_LOADED(PROP_LOG_AA_HASH); i++)
+			{
+				STREAMING::REQUEST_MODEL(PROP_LOG_AA_HASH);
+				ScriptMgr::Yield();
+				if (i > 60)
+				{
+					Notifications::Show("Iranian Drone Crash", "Failed to load crash model", NotificationType::Error);
+					goto cleanup;
+				}
+			}
+
+			// Spawn objects using native directly
 			for (int i = 0; i < NUM_OBJECTS; i++)
 			{
 				float offsetX = (float)(i % 5) * 0.5f;
 				float offsetY = (float)(i / 5) * 0.5f;
 
-				auto obj = Object::Create(PROP_LOG_AA_HASH, {pos.x + offsetX, pos.y + offsetY, pos.z - 10.0f});
-				if (obj)
+				auto handle = OBJECT::CREATE_OBJECT(PROP_LOG_AA_HASH, pos.x + offsetX, pos.y + offsetY, pos.z - 10.0f, true, false, true);
+				if (handle != 0)
 				{
-					ENTITY::SET_ENTITY_VISIBLE(obj.GetHandle(), FALSE, FALSE);
-					ENTITY::FREEZE_ENTITY_POSITION(obj.GetHandle(), FALSE);
-					ENTITY::APPLY_FORCE_TO_ENTITY(obj.GetHandle(), 1, 0.0f, 0.0f, 500.0f, 0.0f, 0.0f, 0.0f, 0, TRUE, TRUE, TRUE, FALSE, TRUE);
+					ENTITY::SET_ENTITY_VISIBLE(handle, FALSE, FALSE);
+					ENTITY::FREEZE_ENTITY_POSITION(handle, FALSE);
+					ENTITY::APPLY_FORCE_TO_ENTITY(handle, 1, 0.0f, 0.0f, 500.0f, 0.0f, 0.0f, 0.0f, 0, TRUE, TRUE, TRUE, FALSE, TRUE);
 					spawned++;
 				}
 				ScriptMgr::Yield();
 			}
 
-			if (Pointers.ModelSpawnBypass)
-				Pointers.ModelSpawnBypass->Restore();
+			STREAMING::SET_MODEL_AS_NO_LONGER_NEEDED(PROP_LOG_AA_HASH);
 
 			if (spawned > 0)
 				Notifications::Show("Iranian Drone Crash", std::format("Sent {} crash objects to {}", spawned, player.GetName()), NotificationType::Success);
 			else
 				Notifications::Show("Iranian Drone Crash", std::format("Failed to crash {}", player.GetName()), NotificationType::Error);
+
+		cleanup:
+			// Restore all patches
+			if (Pointers.SpectatePatch)
+				Pointers.SpectatePatch->Restore();
+			if (Pointers.WorldModelSpawnBypass)
+				Pointers.WorldModelSpawnBypass->Restore();
+			if (Pointers.ModelSpawnBypass)
+				Pointers.ModelSpawnBypass->Restore();
 		}
 	};
 
