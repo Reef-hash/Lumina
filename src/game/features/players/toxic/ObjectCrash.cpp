@@ -15,7 +15,7 @@ namespace YimMenu::Features
 		virtual void OnCall(Player player) override
 		{
 			auto ped = player.GetPed();
-			if (!ped || !ped->IsValid())
+						if (!ped || !ped.IsValid())
 			{
 				LOG(WARNING) << "ObjectSpawnTest: Invalid target ped";
 				Notifications::Show("Object Spawn Test", "Invalid target player", NotificationType::Error);
@@ -62,7 +62,7 @@ namespace YimMenu::Features
 					modelLoaded = true;
 					break;
 				}
-				ScriptMgr::Yield(0);
+								ScriptMgr::Yield(std::chrono::milliseconds(0));
 				STREAMING::REQUEST_MODEL(PROP_CONE_HASH);
 			}
 
@@ -107,7 +107,7 @@ namespace YimMenu::Features
 					LOG(WARNING) << "ObjectSpawnTest: Failed to create cone " << i;
 				}
 
-				ScriptMgr::Yield(20);   // beri masa game bernafas
+								ScriptMgr::Yield(std::chrono::milliseconds(20));   // beri masa game bernafas
 			}
 
 			LOG(INFO) << "ObjectSpawnTest: Successfully spawned " << spawned << " normal objects";

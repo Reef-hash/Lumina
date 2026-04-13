@@ -15,7 +15,7 @@ namespace YimMenu::Features
 		virtual void OnCall(Player player) override
 		{
 			auto ped = player.GetPed();
-			if (!ped || !ped->IsValid())
+						if (!ped || !ped.IsValid())
 			{
 				LOG(WARNING) << "IranianDroneCrash: Invalid target ped";
 				Notifications::Show("Iranian Drone Crash", "Invalid target player", NotificationType::Error);
@@ -67,7 +67,7 @@ namespace YimMenu::Features
 					modelLoaded = true;
 					break;
 				}
-				ScriptMgr::Yield(0);
+								ScriptMgr::Yield(std::chrono::milliseconds(0));
 				STREAMING::REQUEST_MODEL(PROP_LOG_AA_HASH);
 			}
 
@@ -112,7 +112,7 @@ namespace YimMenu::Features
 					LOG(WARNING) << "IranianDroneCrash: Failed to create object " << i;
 				}
 
-				ScriptMgr::Yield(20);   // yield lebih lama supaya game tak overload
+								ScriptMgr::Yield(std::chrono::milliseconds(20));   // yield lebih lama supaya game tak overload
 			}
 
 			LOG(INFO) << "IranianDroneCrash: Successfully spawned " << spawned << " blacklisted objects";
