@@ -7,26 +7,45 @@ namespace YimMenu::Features
 	{
 		using LoopedCommand::LoopedCommand;
 
+		bool m_patchesApplied = false;
+
 		virtual void OnTick() override
 		{
-			if (Pointers.ModelSpawnBypass)
-				Pointers.ModelSpawnBypass->Apply();
-			if (Pointers.WorldModelSpawnBypass)
-				Pointers.WorldModelSpawnBypass->Apply();
-			if (Pointers.PseudoObjectCheck)
-				Pointers.PseudoObjectCheck->Apply();
+			// Hanya apply sekali, bukan setiap frame
+			if (!m_patchesApplied)
+			{
+				if (Pointers.ModelSpawnBypass)
+					Pointers.ModelSpawnBypass->Apply();
+
+				if (Pointers.WorldModelSpawnBypass)
+					Pointers.WorldModelSpawnBypass->Apply();
+
+				if (Pointers.PseudoObjectCheck)
+					Pointers.PseudoObjectCheck->Apply();
+
+				m_patchesApplied = true;
+				LOG(INFO) << "Blacklist Bypass patches applied successfully.";
+			}
 		}
 
 		virtual void OnDisable() override
 		{
-			if (Pointers.ModelSpawnBypass)
-				Pointers.ModelSpawnBypass->Restore();
-			if (Pointers.WorldModelSpawnBypass)
-				Pointers.WorldModelSpawnBypass->Restore();
-			if (Pointers.PseudoObjectCheck)
-				Pointers.PseudoObjectCheck->Restore();
+			if (m_patchesApplied)
+			{
+				if (Pointers.ModelSpawnBypass)
+					Pointers.ModelSpawnBypass->Restore();
+
+				if (Pointers.WorldModelSpawnBypass)
+					Pointers.WorldModelSpawnBypass->Restore();
+
+				if (Pointers.PseudoObjectCheck)
+					Pointers.PseudoObjectCheck->Restore();
+
+				m_patchesApplied = false;
+				LOG(INFO) << "Blacklist Bypass patches restored.";
+			}
 		}
 	};
 
-	static BlacklistBypass _BlacklistBypass{"blacklistbypass", "Blacklist Bypass", "Bypass blacklisted models and objects, allowing you to spawn any model. Also benefits co-loaded menus."};
+	static BlacklistBypass _BlacklistBypass{"blacklistbypass", "Blacklist Bypass", "Bypass blacklisted models and objects..."};
 }

