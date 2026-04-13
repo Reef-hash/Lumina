@@ -5,7 +5,6 @@
 #include "game/gta/Natives.hpp"
 #include "game/pointers/Pointers.hpp"
 #include "core/backend/ScriptMgr.hpp"     // <--- penting untuk Yield
-#include "core/logger/Logger.hpp"
 
 namespace YimMenu::Features
 {
