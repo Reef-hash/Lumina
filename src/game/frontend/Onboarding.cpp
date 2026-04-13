@@ -157,10 +157,10 @@ ImGui::TextWrapped("Press INSERT or Ctrl+\\ to open the menu. Lumina offers adva
 					ImGui::PushFont(YimMenu::Menu::Font::g_AwesomeFont); ImGui::TextUnformatted(ICON_FA_GITHUB); ImGui::PopFont();
 					ImGui::SameLine(); ImGui::Text("GitHub:");
 					ImGui::SameLine();
-ImGui::TextColored(ImVec4(0.616f, 0.306f, 0.867f, 1.0f), "https://github.com/Reef-hash/Lumina");
+ImGui::TextColored(ImVec4(0.616f, 0.306f, 0.867f, 1.0f), "D-Law Gaming Discord");
 				if (ImGui::IsItemClicked())
 				{
-					ShellExecuteA(NULL, "open", "https://github.com/Reef-hash/Lumina", NULL, NULL, SW_SHOWNORMAL);
+					ShellExecuteA(NULL, "open", "https://discord.gg/NN9C3CaUCp", NULL, NULL, SW_SHOWNORMAL);
 					}
 
 					// Matrix Link
@@ -169,10 +169,10 @@ ImGui::TextColored(ImVec4(0.616f, 0.306f, 0.867f, 1.0f), "https://github.com/Ree
 					ImGui::PushFont(YimMenu::Menu::Font::g_AwesomeFont); ImGui::TextUnformatted(ICON_FA_MATRIX); ImGui::PopFont();
 					ImGui::SameLine(); ImGui::Text("Matrix:");
 					ImGui::SameLine();
-					ImGui::TextColored(ImVec4(0.2f, 0.6f, 1.0f, 1.0f), "https://matrix.to/#/#yimmenu:matrix.org");
+					ImGui::TextColored(ImVec4(0.2f, 0.6f, 1.0f, 1.0f), "D-Law E-sports Discord");
 					if (ImGui::IsItemClicked())
 					{
-						ShellExecuteA(NULL, "open", "https://matrix.to/#/#yimmenu:matrix.org", NULL, NULL, SW_SHOWNORMAL);
+						ShellExecuteA(NULL, "open", "https://discord.gg/V8SdhBtrjd", NULL, NULL, SW_SHOWNORMAL);
 					}
 
 					ImGui::Spacing();
