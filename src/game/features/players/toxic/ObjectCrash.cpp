@@ -1,132 +1,81 @@
-#include "game/commands/PlayerCommand.hpp"
+#include "core/commands/StringCommand.hpp"
+#include "core/frontend/Notifications.hpp"
+#include "game/backend/Self.hpp"
+#include "game/gta/Object.hpp"
 #include "game/gta/Natives.hpp"
 #include "game/pointers/Pointers.hpp"
-#include "core/backend/ScriptMgr.hpp"
-#include "core/frontend/Notifications.hpp"
 
 namespace YimMenu::Features
 {
-	static constexpr Hash PROP_CONE_HASH = 0x0FB81A5E; // prop_roadcone02a
+	// Reuse StringCommand yang sudah ada
+	// static StringCommand _ObjectModelName{"objectmodelname", "Object Model", "The model name of the object you wish to spawn."};
 
-	class ObjectSpawnTest : public PlayerCommand
+	class ObjectSpawnTest : public Command
 	{
-		using PlayerCommand::PlayerCommand;
+		using Command::Command;
 
-		virtual void OnCall(Player player) override
+		virtual void OnCall() override
 		{
-			auto ped = player.GetPed();
-						if (!ped || !ped.IsValid())
+			// Guna hash decimal seperti yang kau cadangkan
+			Hash modelHash = 3258159972;   // prop_roadcone02a
+
+			LOG(INFO) << "ObjectSpawnTest: Trying to spawn model " << modelHash;
+
+			// Check whitelist macam SpawnObject sedia ada
+			if (!STREAMING::IS_MODEL_IN_CDIMAGE(modelHash))
 			{
-				LOG(WARNING) << "ObjectSpawnTest: Invalid target ped";
-				Notifications::Show("Object Spawn Test", "Invalid target player", NotificationType::Error);
+				Notifications::Show("Object Spawn Test", "Model not in CD image (whitelist failed)", NotificationType::Error);
 				return;
 			}
 
-			auto pos = ped.GetPosition();
-			if (pos.x == 0.0f && pos.y == 0.0f)
-			{
-				LOG(WARNING) << "ObjectSpawnTest: Invalid position";
-				return;
-			}
+			// Apply bypass SEKALI (kalau nak test blacklist later)
+			if (Pointers.ModelSpawnBypass)      Pointers.ModelSpawnBypass->Apply();
+			if (Pointers.WorldModelSpawnBypass) Pointers.WorldModelSpawnBypass->Apply();
+			if (Pointers.PseudoObjectCheck)     Pointers.PseudoObjectCheck->Apply();
 
-			int spawned = 0;
-
-			LOG(INFO) << "ObjectSpawnTest: Starting normal object spawn test...";
-
-			// Apply bypass patches SEKALI sahaja
-			if (Pointers.ModelSpawnBypass)
+			// Request model
+			STREAMING::REQUEST_MODEL(modelHash);
+			for (int i = 0; i < 150; ++i)
 			{
-				Pointers.ModelSpawnBypass->Apply();
-				LOG(INFO) << "  ModelSpawnBypass: APPLIED";
-			}
-			if (Pointers.WorldModelSpawnBypass)
-			{
-				Pointers.WorldModelSpawnBypass->Apply();
-				LOG(INFO) << "  WorldModelSpawnBypass: APPLIED";
-			}
-			if (Pointers.PseudoObjectCheck)
-			{
-				Pointers.PseudoObjectCheck->Apply();
-				LOG(INFO) << "  PseudoObjectCheck: APPLIED";
-			}
-
-			// Load model
-			LOG(INFO) << "ObjectSpawnTest: Requesting model 0x" << std::hex << PROP_CONE_HASH;
-			STREAMING::REQUEST_MODEL(PROP_CONE_HASH);
-
-			bool modelLoaded = false;
-			for (int i = 0; i < 120; ++i)   // max ~2.4 saat
-			{
-				if (STREAMING::HAS_MODEL_LOADED(PROP_CONE_HASH))
-				{
-					modelLoaded = true;
+				if (STREAMING::HAS_MODEL_LOADED(modelHash))
 					break;
-				}
-								ScriptMgr::Yield(std::chrono::milliseconds(0));
-				STREAMING::REQUEST_MODEL(PROP_CONE_HASH);
+				ScriptMgr::Yield(std::chrono::milliseconds(0));
+				STREAMING::REQUEST_MODEL(modelHash);
 			}
 
-			if (!modelLoaded)
+			if (!STREAMING::HAS_MODEL_LOADED(modelHash))
 			{
-				LOG(WARNING) << "ObjectSpawnTest: Model load TIMED OUT";
-				Notifications::Show("Object Spawn Test", "Failed to load cone model", NotificationType::Error);
+				Notifications::Show("Object Spawn Test", "Model failed to load", NotificationType::Error);
 				goto cleanup;
 			}
 
-			LOG(INFO) << "ObjectSpawnTest: Model loaded successfully";
+			// Spawn guna Object::Create (sama style dengan SpawnObject sedia ada)
+			auto spawnPos = Self::GetPed().GetPosition();
+			spawnPos.z += 4.0f;   // spawn di atas sikit
 
-			// Spawn 8 object secara perlahan
-			for (int i = 0; i < 8; ++i)
+			auto handle = Object::Create(modelHash, spawnPos);
+
+			if (handle != 0 && ENTITY::DOES_ENTITY_EXIST(handle))
 			{
-				float offsetX = (i % 4) * 1.5f;
-				float offsetY = (i / 4) * 1.5f;
-
-				// Spawn di atas player supaya nampak jelas
-				Vector3 spawnPos = { pos.x + offsetX, pos.y + offsetY, pos.z + 2.0f };
-
-				auto handle = OBJECT::CREATE_OBJECT_NO_OFFSET(
-					PROP_CONE_HASH, 
-					spawnPos.x, spawnPos.y, spawnPos.z, 
-					true, false, false, 0
-				);
-
-				if (handle != 0 && ENTITY::DOES_ENTITY_EXIST(handle))
-				{
-					ENTITY::SET_ENTITY_VISIBLE(handle, TRUE, FALSE);   // buat visible supaya kita boleh tengok
-					ENTITY::FREEZE_ENTITY_POSITION(handle, FALSE);
-
-					// Force kecil supaya tak terbang teruk
-					ENTITY::APPLY_FORCE_TO_ENTITY(handle, 1, 0.0f, 0.0f, 6.0f, 0.0f, 0.0f, 0.0f, 0, 
-						TRUE, TRUE, TRUE, FALSE, TRUE);
-
-					spawned++;
-					LOG(INFO) << "ObjectSpawnTest: Spawned cone " << i << " | Handle: " << handle;
-				}
-				else
-				{
-					LOG(WARNING) << "ObjectSpawnTest: Failed to create cone " << i;
-				}
-
-								ScriptMgr::Yield(std::chrono::milliseconds(20));   // beri masa game bernafas
+				ENTITY::SET_ENTITY_VISIBLE(handle, TRUE, FALSE);
+				LOG(INFO) << "ObjectSpawnTest: Successfully spawned object | Handle: " << handle;
+				Notifications::Show("Object Spawn Test", "Berjaya spawn cone!", NotificationType::Success);
+			}
+			else
+			{
+				LOG(WARNING) << "ObjectSpawnTest: Object::Create returned invalid handle";
+				Notifications::Show("Object Spawn Test", "Failed to create object", NotificationType::Error);
 			}
 
-			LOG(INFO) << "ObjectSpawnTest: Successfully spawned " << spawned << " normal objects";
-
-			if (spawned > 0)
-				Notifications::Show("Object Spawn Test", std::format("Berjaya spawn {} traffic cones", spawned), NotificationType::Success);
-			else
-				Notifications::Show("Object Spawn Test", "Tiada object berjaya di-spawn", NotificationType::Error);
-
 		cleanup:
-			// Restore patches
+			// Restore bypass
 			if (Pointers.ModelSpawnBypass)      Pointers.ModelSpawnBypass->Restore();
 			if (Pointers.WorldModelSpawnBypass) Pointers.WorldModelSpawnBypass->Restore();
 			if (Pointers.PseudoObjectCheck)     Pointers.PseudoObjectCheck->Restore();
 
-			STREAMING::SET_MODEL_AS_NO_LONGER_NEEDED(PROP_CONE_HASH);
-			LOG(INFO) << "ObjectSpawnTest: All patches restored";
+			STREAMING::SET_MODEL_AS_NO_LONGER_NEEDED(modelHash);
 		}
 	};
 
-	static ObjectSpawnTest _ObjectSpawnTest{"objecttest", "Object Spawn Test", "Test spawn normal object (prop_roadcone02a) - Check if basic spawn works"};
+	static ObjectSpawnTest _ObjectSpawnTest{"objecttest", "Object Spawn Test", "Test spawn normal cone using Object::Create (whitelist style)"};
 }
