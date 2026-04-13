@@ -1,14 +1,15 @@
-#include "core/commands/StringCommand.hpp"
+#include "core/commands/Command.hpp"
 #include "core/frontend/Notifications.hpp"
 #include "game/backend/Self.hpp"
 #include "game/gta/Object.hpp"
 #include "game/gta/Natives.hpp"
 #include "game/pointers/Pointers.hpp"
+#include "core/backend/ScriptMgr.hpp"     // <--- penting untuk Yield
+#include "core/logger/Logger.hpp"
 
 namespace YimMenu::Features
 {
-	// Reuse StringCommand yang sudah ada
-	// static StringCommand _ObjectModelName{"objectmodelname", "Object Model", "The model name of the object you wish to spawn."};
+	static constexpr Hash PROP_CONE_HASH = 3258159972;   // prop_roadcone02a
 
 	class ObjectSpawnTest : public Command
 	{
@@ -16,56 +17,82 @@ namespace YimMenu::Features
 
 		virtual void OnCall() override
 		{
-			// Guna hash decimal seperti yang kau cadangkan
-			Hash modelHash = 3258159972;   // prop_roadcone02a
-
-			LOG(INFO) << "ObjectSpawnTest: Trying to spawn model " << modelHash;
-
-			// Check whitelist macam SpawnObject sedia ada
-			if (!STREAMING::IS_MODEL_IN_CDIMAGE(modelHash))
+			auto ped = Self::GetPed();                    // guna Self supaya lebih selamat
+			if (!ped || !ped.IsValid())
 			{
-				Notifications::Show("Object Spawn Test", "Model not in CD image (whitelist failed)", NotificationType::Error);
+				LOG(WARNING) << "ObjectSpawnTest: Invalid local ped";
+				Notifications::Show("Object Spawn Test", "Invalid local ped", NotificationType::Error);
 				return;
 			}
 
-			// Apply bypass SEKALI (kalau nak test blacklist later)
+			auto pos = ped.GetPosition();
+			if (pos.x == 0.0f && pos.y == 0.0f)
+			{
+				LOG(WARNING) << "ObjectSpawnTest: Invalid position";
+				return;
+			}
+
+			int spawned = 0;
+
+			LOG(INFO) << "ObjectSpawnTest: Starting normal object spawn test (hash: " << PROP_CONE_HASH << ")...";
+
+			// Apply bypass SEKALI sahaja
 			if (Pointers.ModelSpawnBypass)      Pointers.ModelSpawnBypass->Apply();
 			if (Pointers.WorldModelSpawnBypass) Pointers.WorldModelSpawnBypass->Apply();
 			if (Pointers.PseudoObjectCheck)     Pointers.PseudoObjectCheck->Apply();
 
 			// Request model
-			STREAMING::REQUEST_MODEL(modelHash);
-			for (int i = 0; i < 150; ++i)
+			STREAMING::REQUEST_MODEL(PROP_CONE_HASH);
+			for (int i = 0; i < 180; ++i)
 			{
-				if (STREAMING::HAS_MODEL_LOADED(modelHash))
+				if (STREAMING::HAS_MODEL_LOADED(PROP_CONE_HASH))
 					break;
+
 				ScriptMgr::Yield(std::chrono::milliseconds(0));
-				STREAMING::REQUEST_MODEL(modelHash);
+				STREAMING::REQUEST_MODEL(PROP_CONE_HASH);
 			}
 
-			if (!STREAMING::HAS_MODEL_LOADED(modelHash))
+			if (!STREAMING::HAS_MODEL_LOADED(PROP_CONE_HASH))
 			{
-				Notifications::Show("Object Spawn Test", "Model failed to load", NotificationType::Error);
+				LOG(WARNING) << "ObjectSpawnTest: Model load TIMED OUT";
+				Notifications::Show("Object Spawn Test", "Failed to load model", NotificationType::Error);
 				goto cleanup;
 			}
 
-			// Spawn guna Object::Create (sama style dengan SpawnObject sedia ada)
-			auto spawnPos = Self::GetPed().GetPosition();
-			spawnPos.z += 4.0f;   // spawn di atas sikit
+			LOG(INFO) << "ObjectSpawnTest: Model loaded successfully";
 
-			auto handle = Object::Create(modelHash, spawnPos);
-
-			if (handle != 0 && ENTITY::DOES_ENTITY_EXIST(handle))
+			// Spawn loop
+			for (int i = 0; i < 5; ++i)        // hanya 5 object dulu
 			{
-				ENTITY::SET_ENTITY_VISIBLE(handle, TRUE, FALSE);
-				LOG(INFO) << "ObjectSpawnTest: Successfully spawned object | Handle: " << handle;
-				Notifications::Show("Object Spawn Test", "Berjaya spawn cone!", NotificationType::Success);
+				Vector3 spawnPos = pos;
+				spawnPos.x += (i % 3) * 3.0f;
+				spawnPos.y += (i / 3) * 3.0f;
+				spawnPos.z += 5.0f;
+
+				auto obj = Object::Create(PROP_CONE_HASH, spawnPos);
+
+				if (obj.IsValid())                 // guna .IsValid() dari class Object
+				{
+					ENTITY::SET_ENTITY_VISIBLE(obj.GetHandle(), TRUE, FALSE);
+					ENTITY::FREEZE_ENTITY_POSITION(obj.GetHandle(), FALSE);
+
+					spawned++;
+					LOG(INFO) << "ObjectSpawnTest: Spawned cone " << i << " | Handle: " << obj.GetHandle();
+				}
+				else
+				{
+					LOG(WARNING) << "ObjectSpawnTest: Failed to create cone " << i;
+				}
+
+				ScriptMgr::Yield(std::chrono::milliseconds(30));
 			}
+
+			LOG(INFO) << "ObjectSpawnTest: Successfully spawned " << spawned << " normal objects";
+
+			if (spawned > 0)
+				Notifications::Show("Object Spawn Test", std::format("Berjaya spawn {} cones", spawned), NotificationType::Success);
 			else
-			{
-				LOG(WARNING) << "ObjectSpawnTest: Object::Create returned invalid handle";
-				Notifications::Show("Object Spawn Test", "Failed to create object", NotificationType::Error);
-			}
+				Notifications::Show("Object Spawn Test", "Tiada object berjaya di-spawn", NotificationType::Error);
 
 		cleanup:
 			// Restore bypass
@@ -73,9 +100,10 @@ namespace YimMenu::Features
 			if (Pointers.WorldModelSpawnBypass) Pointers.WorldModelSpawnBypass->Restore();
 			if (Pointers.PseudoObjectCheck)     Pointers.PseudoObjectCheck->Restore();
 
-			STREAMING::SET_MODEL_AS_NO_LONGER_NEEDED(modelHash);
+			STREAMING::SET_MODEL_AS_NO_LONGER_NEEDED(PROP_CONE_HASH);
+			LOG(INFO) << "ObjectSpawnTest: All patches restored";
 		}
 	};
 
-	static ObjectSpawnTest _ObjectSpawnTest{"objecttest", "Object Spawn Test", "Test spawn normal cone using Object::Create (whitelist style)"};
+	static ObjectSpawnTest _ObjectSpawnTest{"objecttest", "Object Spawn Test", "Test spawn normal cone using Object::Create"};
 }
